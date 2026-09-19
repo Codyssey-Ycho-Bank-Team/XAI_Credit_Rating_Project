@@ -1,4 +1,8 @@
-"""Give Me Some Credit 원본 데이터 탐색 (EDA)"""
+"""
+Give Me Some Credit 원본 데이터 탐색 (EDA)
+-> 데이터를 손대기 전에 눈으로 살펴보는 단계
+-> 간단히 말해서 이 EDA파일은 그냥 loader파일을
+"""
 
 import sys
 from pathlib import Path
