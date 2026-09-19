@@ -49,7 +49,7 @@ DISTRESS_SEVERITY_RANGE = (3.0, 6.0)  # 곤란의 심각도 (성실도 점수를
 # ── 보호 속성 (공정성 검증용) ────────────────────────────────
 GENDER_COL = 'gender'
 AGE_GROUP_COL = 'age_group'
-AGE_BINS = [-np.inf, 34, 54, np.inf]           # md 기준 연령대: 20-34 / 35-54 / 55+
+AGE_BINS = [-np.inf, 34, 54, np.inf]           # 연령대: 20-34 / 35-54 / 55+
 AGE_LABELS = ['20-34', '35-54', '55+']
 DISADVANTAGED_GENDER = 'female'                 # 편향을 받는 집단 (주부: 명의 문제로 납부 기록 누락)
 DISADVANTAGED_AGE_GROUP = '20-34'               # 편향을 받는 집단 (사회초년생: 기록 기간이 짧음)
@@ -238,7 +238,7 @@ def _simulate_thin_filers(out: pd.DataFrame, ratio: float, rng: np.random.Genera
 
 
 def _add_credit_history(out: pd.DataFrame, thin: np.ndarray, rng: np.random.Generator) -> None:
-    # md의 '신용카드 거래 이력 12개월 미만' 기준을 쓰려면 이력 개월 수 컬럼이 필요한데 원본에 없다.
+    # '신용카드 거래 이력 12개월 미만' 기준을 쓰려면 이력 개월 수 컬럼이 필요한데 원본에 없다.
     # 대체 지표(개설 계좌 수 등)는 의미가 달라서, 이력 개월 수 자체를 시뮬레이션했다.
     # 일반 고객: 12개월 ~ (나이-18)*12개월 사이 (성인이 된 뒤부터 이력이 쌓인다고 가정)
     # 씬파일러: 0 ~ 11개월

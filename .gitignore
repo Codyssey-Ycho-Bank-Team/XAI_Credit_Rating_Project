@@ -6,14 +6,10 @@ __pycache__/
 venv/
 env/
 
-# 데이터 (용량이 크므로 각자 Kaggle에서 다운로드)
+# 데이터 용량이 커서 각자 다운
 data/raw/
-data/processed/
 data/interim/
 
-# 모델 파일
-models/*.pkl
-models/*.joblib
 
 # MLflow
 mlruns/
