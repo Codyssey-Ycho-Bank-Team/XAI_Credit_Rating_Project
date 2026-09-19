@@ -1,0 +1,14 @@
+# XAI 기반 대안신용평가 시스템 - 의존성 목록
+# 설치: pip install -r requirements.txt
+
+pandas==3.0.6
+numpy==2.5.3
+scikit-learn==1.9.1
+joblib==1.6.0
+pyarrow==25.0.1
+
+# ── 모델링 / XAI / 공정성 ──
+
+# ── 실험 추적 (MLflow) / 통계 검증 ──
+
+# ── API (FastAPI) / 대시보드 (Streamlit) ──
