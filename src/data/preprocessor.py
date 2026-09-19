@@ -10,7 +10,8 @@
 
 실행: python src/data/preprocessor.py
 결과물:
-  data/processed/train.parquet, valid.parquet, test.parquet  (전처리된 데이터)
+  data/processed/train.parquet, valid.parquet, test.parquet  (전처리된 데이터, 모델 학습용)
+  data/processed/train_original.parquet 등 3개               (스케일링 전 원래 값, XAI 설명용)
   models/preprocessor_v1.0.joblib                            (학습된 전처리 규칙, API에서 재사용)
 """
 
@@ -87,6 +88,13 @@ FEATURE_GROUPS = {
     'alternative': ALT_FEATURES,
 }
 FEATURE_GROUPS['combined'] = FEATURE_GROUPS['traditional'] + FEATURE_GROUPS['alternative']
+
+# ── 스케일링 전 원래 값 (XAI 설명용) ──────────────────────────
+# 스케일링된 값(예: 통신비 0.556)으로는 "통신비 납부율이 88.8%로..." 같은 거절 사유를 만들 수 없다.
+# 빈칸 채우기·극단값 자르기는 되돌릴 수 없어서(씬파일러의 '기록 없음'이 '0회'로 바뀜) 역계산 대신 따로 저장한다.
+# 모델 입력 파일과 섞이지 않게 별도 파일(train_original.parquet)로 두고, 고객 번호(index)는 똑같이 맞춘다.
+ORIGINAL_SUFFIX = '_original'
+ORIGINAL_COLS = MODEL_INPUT_FEATURES + [TARGET_COL, THIN_FILER_COL] + PROTECTED_COLS
 
 
 # ════════════════════════════════════════════════════════════
@@ -186,7 +194,7 @@ def build_protected_encoder() -> OrdinalEncoder:
 # ════════════════════════════════════════════════════════════
 def preprocess_and_split(
     df: pd.DataFrame, target_col: str = TARGET_COL, random_state: int = 42
-) -> tuple[dict[str, pd.DataFrame], ColumnTransformer]:
+) -> tuple[dict[str, pd.DataFrame], ColumnTransformer, dict[str, pd.DataFrame]]:
     
     # ① 분할을 가장 먼저
     raw_splits = dict(zip(['train', 'valid', 'test'], split_data(df, target_col, random_state=random_state)))
@@ -200,7 +208,10 @@ def preprocess_and_split(
         name: _transform_split(raw, feature_transformer, protected_encoder, target_col)
         for name, raw in raw_splits.items()
     }
-    return splits, feature_transformer
+
+    # ④ 스케일링 전 원래 값도 같은 고객·같은 분할로 따로 보관한다 (XAI 거절 사유, 동일 연령대 평균 계산용)
+    originals = {name: raw[ORIGINAL_COLS] for name, raw in raw_splits.items()}
+    return splits, feature_transformer, originals
 
 
 def _transform_split(raw, feature_transformer, protected_encoder, target_col) -> pd.DataFrame:
@@ -219,7 +230,11 @@ def _transform_split(raw, feature_transformer, protected_encoder, target_col) ->
 # ════════════════════════════════════════════════════════════
 # 4) 저장 / 불러오기
 # ════════════════════════════════════════════════════════════
-def save_outputs(splits: dict[str, pd.DataFrame], feature_transformer: ColumnTransformer) -> None:
+def save_outputs(
+    splits: dict[str, pd.DataFrame],
+    feature_transformer: ColumnTransformer,
+    originals: dict[str, pd.DataFrame],
+) -> None:
     """Parquet으로 저장한다. CSV 대신 Parquet을 쓴 이유: 용량이 훨씬 작고 자료형(0/1 정수 등)이 보존된다."""
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
@@ -228,6 +243,12 @@ def save_outputs(splits: dict[str, pd.DataFrame], feature_transformer: ColumnTra
         path = PROCESSED_DIR / f'{name}.parquet'
         data.to_parquet(path)
         logger.info('저장: %s (%d행 x %d열)', path.relative_to(PROJECT_ROOT), *data.shape)
+
+    # 스케일링 전 원래 값: train_original.parquet, valid_original.parquet, test_original.parquet
+    for name, data in originals.items():
+        path = PROCESSED_DIR / f'{name}{ORIGINAL_SUFFIX}.parquet'
+        data.to_parquet(path)
+        logger.info('저장: %s (%d행 x %d열, 스케일링 전 원래 값)', path.relative_to(PROJECT_ROOT), *data.shape)
 
     transformer_path = MODEL_DIR / f'preprocessor_{PREPROCESSOR_VERSION}.joblib'
     joblib.dump(feature_transformer, transformer_path)
@@ -243,6 +264,21 @@ def load_processed_splits() -> dict[str, pd.DataFrame]:
         y_train = splits['train'][TARGET_COL]
     """
     return {name: pd.read_parquet(PROCESSED_DIR / f'{name}.parquet') for name in ['train', 'valid', 'test']}
+
+
+def load_original_splits() -> dict[str, pd.DataFrame]:
+    """팀원용(XAI): 스케일링 전 원래 값을 불러온다. 모델 입력으로 쓰면 안 된다.
+
+    고객 번호(index)가 load_processed_splits()와 같아서, 같은 고객의 원래 값을 바로 찾을 수 있다.
+    사용 예 (138986번 고객의 원래 통신비 납부율):
+        originals = load_original_splits()
+        originals['test'].loc[138986, 'telecom_payment_rate']   # 0.888 -> "88.8%"
+    씬파일러의 연체 컬럼은 빈칸(NaN) 그대로라 "연체 기록 없음"으로 설명할 수 있다.
+    """
+    return {
+        name: pd.read_parquet(PROCESSED_DIR / f'{name}{ORIGINAL_SUFFIX}.parquet')
+        for name in ['train', 'valid', 'test']
+    }
 
 
 # ════════════════════════════════════════════════════════════
@@ -280,10 +316,10 @@ def run_pipeline(thin_filer_ratio: float = 0.3, bias_ratio: float = 0.1, random_
     simulated = generate_alternative_data(
         raw, thin_filer_ratio=thin_filer_ratio, bias_ratio=bias_ratio, random_state=random_state,
     )
-    splits, feature_transformer = preprocess_and_split(simulated, random_state=random_state)
+    splits, feature_transformer, originals = preprocess_and_split(simulated, random_state=random_state)
     summarize_splits(splits)
     check_no_leakage(splits)
-    save_outputs(splits, feature_transformer)
+    save_outputs(splits, feature_transformer, originals)
     return splits, feature_transformer
 
 

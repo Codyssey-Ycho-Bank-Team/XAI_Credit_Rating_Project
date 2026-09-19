@@ -94,5 +94,5 @@ if __name__ == '__main__':
     # 저장된 파일이 아니라 현재 시뮬레이터 코드로 새로 만들어 평가한다 (코드를 고치면 바로 반영되도록).
     raw = load_give_me_some_credit(describe=False)
     simulated = generate_alternative_data(raw)
-    splits, _ = preprocess_and_split(simulated)
+    splits, _, _ = preprocess_and_split(simulated)
     evaluate_thin_filer_uplift(splits)

@@ -18,10 +18,12 @@ from src.data.preprocessor import (
     FEATURE_GROUPS,
     MODEL_DIR,
     MODEL_INPUT_FEATURES,
+    ORIGINAL_SUFFIX,
     OTHER_NUMERIC_FEATURES,
     PREPROCESSOR_VERSION,
     PROCESSED_DIR,
     PROTECTED_COLS,
+    load_original_splits,
     split_data,
 )
 from src.data.simulator import (
@@ -180,10 +182,29 @@ def validate_data_pipeline(
           and not np.isclose(learned_age_mean, simulated['age'].mean(), rtol=0, atol=1e-9))
 
     saved = [PROCESSED_DIR / f'{n}.parquet' for n in ('train', 'valid', 'test')]
+    saved += [PROCESSED_DIR / f'{n}{ORIGINAL_SUFFIX}.parquet' for n in ('train', 'valid', 'test')]
     saved.append(MODEL_DIR / f'preprocessor_{PREPROCESSOR_VERSION}.joblib')
     missing_files = [p.name for p in saved if not p.exists()]
-    check('전처리·분할', '결과물 저장', 'parquet 3개 + joblib 1개',
+    check('전처리·분할', '결과물 저장', 'parquet 6개(전처리 3 + 원래 값 3) + joblib 1개',
           '모두 있음' if not missing_files else f'없음: {missing_files}', not missing_files)
+
+    # XAI 설명용 원래 값: 저장된 파일을 다시 읽어서 세 가지를 확인한다.
+    #   ① 고객 번호가 전처리 파일과 같은 순서로 일치하는가 (같은 고객을 찾을 수 있어야 함)
+    #   ② 값이 시뮬레이션 직후 값과 완전히 같은가 (스케일링·빈칸 채우기가 안 된 상태)
+    #   ③ 씬파일러의 연체 기록이 빈칸(NaN) 그대로인가 ('0회'가 아니라 '기록 없음'으로 설명해야 하므로)
+    if not missing_files:
+        originals = load_original_splits()
+        same_index = all(originals[n].index.equals(splits[n].index) for n in splits)
+        same_values = all(
+            originals[n][MODEL_INPUT_FEATURES].equals(simulated.loc[originals[n].index, MODEL_INPUT_FEATURES])
+            for n in splits
+        )
+        thin_rows = originals['train'][originals['train'][THIN_FILER_COL] == 1]
+        no_record = int(thin_rows[LATE_PAYMENT_COLS].isna().any(axis=1).sum())
+        check('전처리·분할', 'XAI용 원래 값 보존', '고객 번호·값 일치, 씬파일러 연체 "기록 없음" 유지',
+              f'번호 {"일치" if same_index else "불일치"}, 값 {"일치" if same_values else "불일치"}, '
+              f'기록 없음 {no_record:,}/{len(thin_rows):,}명',
+              same_index and same_values and no_record == len(thin_rows))
 
     # API(/predict)에 새 고객이 들어오는 상황: 소득·연체 기록이 비어 있는 25세 고객 1명
     new_customer = pd.DataFrame([{c: np.nan for c in MODEL_INPUT_FEATURES}])

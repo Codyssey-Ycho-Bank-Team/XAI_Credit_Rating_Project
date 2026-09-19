@@ -53,11 +53,11 @@ def main() -> int:
     summarize_thin_filers(simulated)
 
     logger.info('━━ 3/5 전처리 + 70:15:15 분할 ━━')
-    splits, feature_transformer = preprocess_and_split(simulated, random_state=args.random_state)
+    splits, feature_transformer, originals = preprocess_and_split(simulated, random_state=args.random_state)
     summarize_splits(splits)
 
     logger.info('━━ 4/5 결과물 저장 ━━')
-    save_outputs(splits, feature_transformer)
+    save_outputs(splits, feature_transformer, originals)
 
     logger.info('━━ 5/5 md 요구사항 점검 ━━')
     report = validate_data_pipeline(
