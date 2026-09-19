@@ -153,18 +153,7 @@ def _missing_flag_names(transformer, input_features):
 
 
 def build_feature_transformer() -> ColumnTransformer:
-    """모델 입력 변수용 전처리기를 만든다. (아직 fit 전 상태)
-
-    ColumnTransformer는 '컬럼 묶음마다 다른 처리'를 한 번에 해주는 도구다.
-      - clip_numeric : 극단값 컬럼 -> 상위 1% 자르기 -> 중앙값 채우기 -> 표준화
-      - numeric      : 나머지 수치 컬럼 -> 중앙값 채우기 -> 표준화
-      - missing_flag : 결측이 생기는 컬럼 -> '비어 있었음' 0/1 표시 (표준화하지 않음)
-
-    중앙값을 쓴 이유: 평균은 극단값(소득 300만)에 끌려가지만 중앙값은 흔들리지 않는다.
-    결측 표시를 따로 둔 이유: 씬파일러의 연체 컬럼을 중앙값(0)으로 채우면 '연체 0회 모범 고객'으로
-        둔갑한다. 표시 컬럼이 있어야 모델이 '진짜 0회'와 '몰라서 0'을 구분할 수 있다.
-    StandardScaler를 쓴 이유: MinMaxScaler는 최댓값 하나에 나머지가 0 근처로 찌그러져 이상치에 약하다.
-    """
+    
     clip_pipeline = Pipeline([
         ('clip', QuantileClipper()),
         ('impute', SimpleImputer(strategy='median')),
@@ -188,15 +177,7 @@ def build_feature_transformer() -> ColumnTransformer:
 
 
 def build_protected_encoder() -> OrdinalEncoder:
-    """보호 속성(성별/연령대)을 숫자로 바꾸는 인코더 (Label Encoding).
-
-    모델 입력용이 아니라 공정성 모듈(AIF360 등)이 숫자로 된 보호 속성을 요구해서 만든다.
-    One-Hot 대신 Label Encoding을 쓴 이유:
-      - 연령대는 순서가 있는 범주(20-34 < 35-54 < 55+)라 숫자 하나로 순서를 보존할 수 있다.
-      - 성별은 두 값뿐이라 0/1 컬럼 하나로 충분하다.
-    LabelEncoder 클래스는 target 전용으로 설계되어 있어서, 입력 변수에는 OrdinalEncoder를 쓴다.
-    범주를 직접 지정해서 어떤 데이터가 들어와도 같은 숫자가 나오게 했다.
-    """
+    
     return OrdinalEncoder(categories=PROTECTED_CATEGORIES, dtype=int)
 
 
@@ -206,14 +187,7 @@ def build_protected_encoder() -> OrdinalEncoder:
 def preprocess_and_split(
     df: pd.DataFrame, target_col: str = TARGET_COL, random_state: int = 42
 ) -> tuple[dict[str, pd.DataFrame], ColumnTransformer]:
-    """시뮬레이션된 데이터를 분할하고 전처리한다.
-
-    Returns:
-        splits: {'train': df, 'valid': df, 'test': df}
-            각 DataFrame = 전처리된 모델 입력 변수 + target + 메타 정보(씬파일러 여부, 보호 속성)
-            index는 원본 고객 번호 그대로라 원래 값(스케일링 전)을 찾아볼 수 있다.
-        feature_transformer: Train으로 학습된 전처리기 (API에서 새 고객 변환에 재사용)
-    """
+    
     # ① 분할을 가장 먼저
     raw_splits = dict(zip(['train', 'valid', 'test'], split_data(df, target_col, random_state=random_state)))
 
@@ -293,11 +267,7 @@ def summarize_splits(splits: dict[str, pd.DataFrame], target_col: str = TARGET_C
 
 
 def check_no_leakage(splits: dict[str, pd.DataFrame]) -> pd.DataFrame:
-    """표준화된 변수의 평균을 세트별로 비교한다.
-
-    Train으로만 fit했다면 Train 평균은 정확히 0, Valid/Test는 0에 '가깝지만 정확히 0은 아닌' 값이 나와야 한다.
-    만약 Valid/Test도 전부 정확히 0이라면 각자 따로 fit했다는 뜻이다 (잘못된 전처리).
-    """
+    
     scaled = CLIP_FEATURES + OTHER_NUMERIC_FEATURES
     means = pd.DataFrame({name: s[scaled].mean() for name, s in splits.items()})
     logger.info('표준화 변수의 세트별 평균 (Train=0, Valid/Test≈0이면 정상):\n%s', means.round(4).to_string())
