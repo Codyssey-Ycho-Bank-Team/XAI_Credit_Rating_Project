@@ -9,6 +9,11 @@ pyarrow==25.0.1
 
 # ── 모델링 / XAI / 공정성 ──
 
+imbalanced-learn==0.14.2
+lightgbm==4.7.0
+scipy==1.18.1
+xgboost==3.4.1
+
 # ── 실험 추적 (MLflow) / 통계 검증 ──
 
 # ── API (FastAPI) / 대시보드 (Streamlit) ──
