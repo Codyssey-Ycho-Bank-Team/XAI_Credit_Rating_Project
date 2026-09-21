@@ -1,57 +1,59 @@
-# 모델 학습 & 하이퍼파라미터 튜닝 (고윤)
+# XAI_Credit_Rating_Project
+코디세이 XAI 기반 신용평가 모델 프로젝트
 
-## 1. Baseline 비교 (3개 모델 × 5-Fold Stratified CV)
 
-| 모델 | 불균형 처리 | AUC | 비고 |
-|---|---|---|---|
-| LogisticRegression | class_weight | 0.8982 | |
-| LogisticRegression | SMOTE | 0.8956 | |
-| XGBoost | scale_pos_weight | 0.8900 | |
-| XGBoost | SMOTE | 0.8991 | |
-| LightGBM | class_weight | 0.9090 | |
-| LightGBM | SMOTE | 0.9064 | |
+- **원본 데이터 불러오기**: Kaggle Give Me Some Credit 15만 명 데이터를 읽고, 컬럼·타입·빈칸 비율을 출력합니다. (`src/data/loader.py`)
+- **데이터 살펴보기**: 소득의 20%가 비어 있고, 부도 고객은 6.68%이며, 원본에는 씬파일러가 0명인 것을 확인했습니다. (`notebooks/01_eda.py`)
+- **대안 데이터 만들기**: 원본에 없는 통신비·공과금 납부율, 소비 일관성, 정기결제 건수, 앱 로그인 빈도 5개를 만들었고, 부도와의 상관계수는 0.39~0.44입니다. (`src/data/simulator.py`)
+- **씬파일러 만들기**: 전체의 30%를 씬파일러(연체 기록 없음, 신용 이력 12개월 미만)로 만들고, `is_thin_filer()` 함수로 구분합니다.
+- **공정성 실험용 편향**: 성별·연령대를 만들고, `bias_ratio`로 여성·20-34세에게 불리한 정도를 조절할 수 있게 했습니다.
+- **전처리**: 빈칸은 중앙값으로 채우고(빈칸이었다는 표시 컬럼 추가), 너무 큰 값은 상위 1%에서 자르고, 변수 크기를 맞췄습니다. (`src/data/preprocessor.py`)
+- **분할**: train 70% / valid 15% / test 15%로 나눴고, 세 세트 모두 부도율이 6.68%로 같습니다.
+- **효과 확인**: 대안 데이터를 넣으면 씬파일러의 AUC가 +0.069 올라갑니다 (목표 +0.03). (`src/data/thin_filer_evaluation.py`)
+- **자동 점검**: 위 요구사항 21개를 자동으로 확인하며, 전부 통과합니다. (`src/data/validation.py`)
 
-**관찰**: LR/LightGBM은 class_weight가 우세, XGBoost는 SMOTE가 우세 (baseline 기준)
+### 실행 방법
 
-## 2. 하이퍼파라미터 튜닝
+Python 3.12 이상이 필요합니다.
 
-- 방법: LR은 `GridSearchCV`(조합 10개, 전수 탐색), XGB/LightGBM은 `RandomizedSearchCV`(n_iter=30)
-- CV: 5-Fold Stratified, `random_state=42` 고정 (재현성)
+```bash
+pip install -r requirements.txt
+python run_data_pipeline.py
+```
 
-| 모델 | 최적 불균형처리 | 튜닝 전 AUC | 튜닝 후 AUC | 개선폭 |
-|---|---|---|---|---|
-| LR | class_weight | 0.8982 | 0.8982 | +0.0000 |
-| LightGBM | class_weight | 0.9090 | 0.9112 | +0.0022 |
-| XGBoost | scale_pos_weight | 0.8900 | 0.9118 | +0.0218 |
+- 마지막에 `점검 21개 중 21개 통과`가 나오면 성공입니다.
+- 공정성 실험처럼 편향이 강한 데이터가 필요하면 `python run_data_pipeline.py --bias-ratio 0.7`로 만듭니다.
+- 결과를 엑셀로 보고 싶으면 `python notebooks/02_view_samples.py`를 실행하고 `data/samples/train_sample_100.csv`를 엽니다.
+- 원본 데이터 폴더를 바꾸려면 환경 변수 `DATA_DIR`을 지정합니다 (기본값 `data/raw`).
 
-**핵심 발견**: XGBoost는 튜닝 전 최하위였으나 튜닝 후 최고 성능으로 역전. LR은 선형모델 구조상 튜닝 효과가 구조적으로 제한적.
+### 결과물: 모델 학습용 데이터 (`data/processed/`)
 
-## 3. 불균형 처리 방식 재검증 (튜닝된 하이퍼파라미터 기준)
+| 파일 | 고객 수 | 용도 |
+| --- | --- | --- |
+| `train.parquet` | 105,000명 | 모델 학습 |
+| `valid.parquet` | 22,500명 | 모델 비교·튜닝 |
+| `test.parquet` | 22,500명 | 최종 성능 측정 |
+| `train/valid/test_original.parquet` | 위와 같음 | 같은 고객의 전처리 전 원래 값 (XAI 거절 사유 문장용) |
+| `models/preprocessor_v1.0.joblib` | - | 전처리 규칙 (API에서 새 고객을 같은 방식으로 변환) |
 
-| 모델 | class_weight/scale_pos | SMOTE | 최적 방식 |
-|---|---|---|---|
-| LR | 0.8982 | 0.8966 | class_weight |
-| LightGBM | 0.9112 | 0.9070 | class_weight |
-| XGBoost | 0.9118 | 0.9067 | scale_pos_weight |
+불러오는 방법:
 
-**핵심 발견**: baseline에서는 XGB+SMOTE가 우세했으나, 튜닝 후에는 3개 모델 전부 class_weight 계열이 SMOTE를 앞섬 → 불균형 처리 방식과 하이퍼파라미터는 독립적으로 판단하면 안 됨을 시사
+```python
+from src.data.loader import TARGET_COL
+from src.data.preprocessor import FEATURE_GROUPS, load_original_splits, load_processed_splits
 
-## 4. CPU vs GPU 리소스 비교
+splits = load_processed_splits()
+X_train = splits['train'][FEATURE_GROUPS['combined']]  # 모델 입력 21개
+y_train = splits['train'][TARGET_COL]                  # 정답 (1 = 부도)
 
-- LightGBM(CPU): 127초 vs XGBoost(GPU, CUDA): 233초 → CPU가 약 1.8배 빠름
-- 원인: 데이터 규모(10만 행)가 작아 GPU 병렬처리 이득보다 CPU↔GPU 데이터 전송 오버헤드가 더 큼 (실행 로그의 `mismatched devices` 경고로 확인)
-- 결론: 현재 캡스톤 규모에서는 GPU 불필요, CPU 학습이 더 효율적
+originals = load_original_splits()                     # 원래 값 (예: 통신비 납부율 0.888 = 88.8%)
+```
 
-## 5. 최종 모델 확정
+사용할 때 주의할 점:
 
-| 모델 | 최적 조합 | AUC |
-|---|---|---|
-| **XGBoost** | scale_pos_weight | **0.9118** (최종 채택) |
-| LightGBM | class_weight | 0.9112 |
-| LR | class_weight | 0.8982 |
-
-## 참고 코드
-- `notebooks/03_baseline_model.py` — 3개 모델 baseline + CV
-- `notebooks/04-1_hyperparameter_lgbm.py` — LightGBM 튜닝 (CPU)
-- `notebooks/04-2_hyperparameter_xgb.py` — XGBoost 튜닝 (GPU)
-- `notebooks/04-3_hyperparameter_lr.py` — LR 튜닝
+- `gender`, `age_group`은 공정성 검사용이라 **모델 입력에 넣지 않습니다.**
+- `*_original.parquet`의 원래 값도 설명 문장용이라 **모델 입력에 넣지 않습니다.**
+- `is_thin_filer`는 씬파일러만 따로 성능을 볼 때 씁니다.
+- 전통 / 대안 / 통합 모델 비교는 `FEATURE_GROUPS['traditional']`, `['alternative']`, `['combined']`를 씁니다.
+- SMOTE 같은 불균형 처리는 **train에만** 적용합니다.
+- 대안 데이터는 실제 데이터가 아니라, 부도 여부를 바탕으로 만든 **시뮬레이션 데이터**입니다.
