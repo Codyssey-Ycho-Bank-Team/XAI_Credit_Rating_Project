@@ -16,4 +16,6 @@ xgboost==3.4.1
 
 # ── 실험 추적 (MLflow) / 통계 검증 ──
 
+mlflow==3.16.1
+
 # ── API (FastAPI) / 대시보드 (Streamlit) ──

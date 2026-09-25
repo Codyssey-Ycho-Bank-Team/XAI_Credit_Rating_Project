@@ -4,10 +4,8 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from src.data.preprocessor import FEATURE_GROUPS, load_processed_splits
 from src.data.loader import TARGET_COL
+from src.models.metrics import calculate_psi, ks_statistic
 from xgboost import XGBClassifier
-from sklearn.metrics import roc_curve
-import numpy as np
-import pandas as pd
 
 splits = load_processed_splits()
 train, test = splits['train'], splits['test']
@@ -26,33 +24,11 @@ pred_train = model.predict_proba(train[features])[:, 1]
 pred_test = model.predict_proba(test[features])[:, 1]
 
 # ── KS Statistic ──
-def ks_statistic(y_true, y_pred):
-    fpr, tpr, thresholds = roc_curve(y_true, y_pred)
-    ks = np.max(tpr - fpr)  # TPR-FPR 차이가 제일 큰 지점
-    ks_threshold = thresholds[np.argmax(tpr - fpr)]
-    return ks, ks_threshold
-
+# 계산 함수는 src/models/metrics.py 한 곳에 두고 train.py(MLflow 기록)와 같이 쓴다.
 ks, ks_thr = ks_statistic(y_test, pred_test)
 print(f'KS Statistic (test): {ks:.4f}  (threshold={ks_thr:.4f})  -> 목표(0.28) {"달성" if ks >= 0.28 else "미달"}')
 
 # ── PSI (Population Stability Index) ──
-def calculate_psi(expected, actual, bins=10):
-    breakpoints = np.percentile(expected, np.linspace(0, 100, bins + 1))
-    breakpoints[0], breakpoints[-1] = -np.inf, np.inf
-
-    expected_bins = pd.cut(expected, breakpoints)
-    actual_bins = pd.cut(actual, breakpoints)
-
-    categories = expected_bins.categories  # .cat.categories -> .categories로 수정
-    expected_pct = expected_bins.value_counts().reindex(categories) / len(expected)
-    actual_pct = actual_bins.value_counts().reindex(categories) / len(actual)
-
-    expected_pct = expected_pct.clip(lower=0.0001)
-    actual_pct = actual_pct.clip(lower=0.0001)
-
-    psi = np.sum((actual_pct - expected_pct) * np.log(actual_pct / expected_pct))
-    return psi
-
 psi = calculate_psi(pred_train, pred_test)
 print(f'PSI (train vs test 예측분포): {psi:.4f}  -> 목표(<0.1) {"달성" if psi < 0.1 else "미달"}')
 

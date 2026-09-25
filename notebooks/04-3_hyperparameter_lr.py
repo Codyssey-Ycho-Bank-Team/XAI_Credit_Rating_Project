@@ -11,6 +11,10 @@ import time
 from imblearn.pipeline import Pipeline
 from imblearn.over_sampling import SMOTE
 
+import mlflow
+import mlflow.sklearn
+from src.models.tracking import TUNING_EXPERIMENT_NAME, setup_mlflow
+
 splits = load_processed_splits()
 X_train = splits['train'][FEATURE_GROUPS['combined']]
 y_train = splits['train'][TARGET_COL]
@@ -47,8 +51,16 @@ search = GridSearchCV(
     verbose=1,
 )
 
+# MLflow: 조합 10개를 모두 자동 기록 (max_tuning_runs=None)
+# 최종 모델 파일은 src/models/train.py가 기록하므로 여기서는 모델을 저장하지 않는다 (log_models=False)
+# 한글 Windows에서는 `python -X utf8 notebooks/04-3_hyperparameter_lr.py`로 실행해야 기록된다
+# (scikit-learn이 내부 파일을 cp949로 읽다가 실패해 autolog가 멈추는 문제)
+setup_mlflow(TUNING_EXPERIMENT_NAME)
+mlflow.sklearn.autolog(max_tuning_runs=None, log_models=False, log_datasets=False)
+
 start = time.time()
-search.fit(X_train, y_train)
+with mlflow.start_run(run_name=f'logistic_regression_{IMBALANCE_METHOD}_tuning'):
+    search.fit(X_train, y_train)
 print(f'소요 시간: {time.time() - start:.1f}초')
 print(f'불균형 처리 방식: {IMBALANCE_METHOD}')
 print('최적 하이퍼파라미터:', search.best_params_)
