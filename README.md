@@ -26,6 +26,24 @@ python run_data_pipeline.py
 - 결과를 엑셀로 보고 싶으면 `python notebooks/02_view_samples.py`를 실행하고 `data/samples/train_sample_100.csv`를 엽니다.
 - 원본 데이터 폴더를 바꾸려면 환경 변수 `DATA_DIR`을 지정합니다 (기본값 `data/raw`).
 
+### Docker로 실행하기 (팀 공통 개발환경)
+
+Docker Desktop만 있으면 Python을 따로 설치하지 않아도 됩니다. 이미지는 Python 3.12 기준이고, `app`(개발용)과 `mlflow`(실험 추적 서버) 두 서비스로 구성됩니다.
+
+```bash
+docker compose build                                    # 처음 한 번 (requirements.txt 바뀌면 다시)
+docker compose up -d mlflow                             # MLflow 서버 켜기 -> http://localhost:5000
+docker compose run --rm app python run_data_pipeline.py # 전처리 (21개 점검 통과 확인)
+docker compose run --rm app python -m src.models.train  # 모델 학습 + MLflow 기록 + Registry 등록
+docker compose down                                     # 끄기
+```
+
+- `app` 컨테이너는 프로젝트 폴더를 통째로 연결(`.:/app`)하므로 로컬에서 고친 코드가 바로 반영되고, `data/processed/`, `models/` 결과물도 로컬 폴더에 그대로 생깁니다.
+- `app` 안에서는 `MLFLOW_TRACKING_URI=http://mlflow:5000`이 자동으로 지정되어 모든 실험이 MLflow 서버에 기록됩니다. 실행 기록과 모델 파일은 `mlflow-data` 볼륨에 저장되어 `docker compose down` 해도 남습니다. (지우려면 `docker compose down -v`)
+- 컨테이너 안에서 직접 명령을 치고 싶으면 `docker compose run --rm app bash`
+- Docker 없이 로컬에서 돌리면서 Docker MLflow 서버에 기록하고 싶으면 `.env`에 `MLFLOW_TRACKING_URI=http://localhost:5000`을 넣습니다.
+- API(FastAPI)와 대시보드(Streamlit) 서비스는 9주차에 `docker-compose.yml`의 주석 자리에 추가합니다.
+
 ### 결과물: 모델 학습용 데이터 (`data/processed/`)
 
 | 파일 | 고객 수 | 용도 |

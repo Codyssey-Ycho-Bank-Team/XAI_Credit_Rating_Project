@@ -1,0 +1,20 @@
+# 이미지에 넣을 필요 없는 것들 (빌드 속도·용량)
+.git/
+.github/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.env
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 데이터·모델·실험 기록은 docker-compose에서 볼륨으로 연결하므로 이미지에 굽지 않는다
+data/
+models/
+mlruns/
+mlflow.db
