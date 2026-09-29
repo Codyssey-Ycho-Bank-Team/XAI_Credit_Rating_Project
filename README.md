@@ -1,6 +1,20 @@
 # XAI_Credit_Rating_Project
 코디세이 XAI 기반 신용평가 모델 프로젝트
 
+## 어떤 데이터셋을 쓰나요? (`cs-training.csv`)
+
+Kaggle Give Me Some Credit 데이터는 파일이 2개입니다. 우리는 **`cs-training.csv`만** 씁니다.
+
+| 파일 | 정답(부도 여부) | 우리 사용 |
+| --- | --- | --- |
+| `cs-training.csv` (15만 명) | 있음 | ✅ 학습·평가에 사용 |
+| `cs-test.csv` (10만 명) | 없음 (Kaggle 대회 제출용) | ❌ 미사용 |
+
+- `cs-test.csv`는 원래 Kaggle 대회에 제출하라고 정답을 숨겨둔 파일입니다. 정답이 없으면 모델 성능(AUC 등)을 채점할 수 없어서 우리 프로젝트에서는 쓸 수 없습니다.
+- 그래서 정답이 있는 `cs-training.csv` 한 개만 가져와 우리가 직접 train/valid/test로 나눕니다.
+- 참고: 이상치(96/98) 개수가 두 파일이 다릅니다. `cs-training.csv`는 269명(96=5, 98=264), `cs-test.csv`는 214명(96=1, 98=213)입니다. 이상치를 셀 때는 우리가 쓰는 `cs-training.csv` 기준입니다.
+
+---
 
 - **원본 데이터 불러오기**: Kaggle Give Me Some Credit 15만 명 데이터를 읽고, 컬럼·타입·빈칸 비율을 출력합니다. (`src/data/loader.py`)
 - **데이터 살펴보기**: 소득의 20%가 비어 있고, 부도 고객은 6.68%이며, 원본에는 씬파일러가 0명인 것을 확인했습니다. (`notebooks/01_eda.py`)
