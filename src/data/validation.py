@@ -17,6 +17,7 @@ from src.data.preprocessor import (
     CLIP_FEATURES,
     FEATURE_GROUPS,
     MODEL_DIR,
+    MISSING_FLAG_SUFFIX,
     MODEL_INPUT_FEATURES,
     ORIGINAL_SUFFIX,
     OTHER_NUMERIC_FEATURES,
@@ -127,6 +128,25 @@ def validate_data_pipeline(
     judged = is_thin_filer(cases).tolist()
     check('씬파일러', '판정 함수 규칙', '결측0/결측1/결측2/이력5개월 -> 0/0/1/1',
           '/'.join(map(str, judged)), judged == [0, 0, 1, 1])
+
+    # 이상치(96/98)는 정답(정상/부도)과 무관하게 똑같이 처리되어야 한다.
+    # 원본에서 96/98을 가진 269명을 정상/부도로 나눈 뒤, 최종 전처리 결과에서 두 그룹이
+    # 똑같이 (1) 96/98이 하나도 안 남고 (2) 전부 _missing=1 이 됐는지 확인한다.
+    # 두 그룹의 처리 결과가 같으면 = 정답을 보지 않고 처리했다는 증거 (데이터 누수 없음).
+    outlier_id = raw.index[raw[LATE_PAYMENT_COLS].isin(CODED_MISSING_VALUES).any(axis=1)]
+    all_proc = pd.concat(splits.values())
+    late_flags = [f'{c}{MISSING_FLAG_SUFFIX}' for c in LATE_PAYMENT_COLS]
+    outlier_check = {}
+    for label, is_default in [('정상', 0), ('부도', 1)]:
+        ids = [i for i in outlier_id if i in all_proc.index and all_proc.loc[i, TARGET_COL] == is_default]
+        rows = all_proc.loc[ids]
+        left_9698 = int(rows[LATE_PAYMENT_COLS].isin(CODED_MISSING_VALUES).sum().sum())  # 남은 96/98
+        all_flagged = bool((rows[late_flags].max(axis=1) == 1).all())  # 전원 _missing=1?
+        outlier_check[label] = (len(ids), left_9698, all_flagged)
+    both_ok = all(v[1] == 0 and v[2] for v in outlier_check.values())
+    check('씬파일러', '이상치 처리: 정상·부도 무관 동일', '두 그룹 모두 96/98 잔존 0 + 전원 결측표시',
+          f'정상 {outlier_check["정상"][0]}명·부도 {outlier_check["부도"][0]}명 모두 잔존 0, 표시 완료',
+          both_ok)
 
     uplift = evaluate_thin_filer_uplift(splits)
     thin_uplift = uplift.loc['씬파일러', 'uplift']
