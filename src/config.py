@@ -9,6 +9,7 @@ load_dotenv(PROJECT_ROOT / ".env")                      # .env의 환경 변수(
 # 경로
 DOWNLOAD_PATH = PROJECT_ROOT / "data" / "raw"               # Kaggle 원본 데이터 저장 폴더
 DATA_SET_PATH = DOWNLOAD_PATH / "cs-training.csv"           # 사용하는 원본 데이터 파일
+PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"         # 파이프라인 결과(parquet, metadata.json) 저장 폴더
 MODEL_DIR = PROJECT_ROOT / "models"                         # 학습된 모델 저장 폴더
 PREPROCESSOR_PATH = MODEL_DIR / "preprocessor_v1.0.joblib"  # 학습된 전처리기 저장 경로
 
@@ -77,6 +78,12 @@ FLAG_COLS = [                            # 0/1 표시 컬럼 (스케일링하지
 ]
 FEATURE_COLS = SCALE_COLS + FLAG_COLS    # 모델에 넣을 피처 전체 (통합 그룹)
 TRADITIONAL_COLS = RAW_NUMERIC_COLS + ["monthly_debt_payment"] + FLAG_COLS   # 전통 그룹 (ANOVA 검증 1, 씬파일러 AUC 비교용)
+FEATURE_GROUPS = {                       # 피처 그룹 (ANOVA 검증 1, 씬파일러 AUC 비교용)
+    "traditional": TRADITIONAL_COLS,     # 전통: 원본 금융 데이터 + 파생 컬럼 + 표시 컬럼 (17개)
+    "alternative": ALT_COLS,             # 대안: 시뮬레이션한 대안 변수 (5개)
+    "combined": FEATURE_COLS,            # 통합: 전통 + 대안 (22개)
+}
+PROTECTED_COLS = ["gender", "age_group"]   # 보호 속성 (공정성 분석 전용, 피처 아님)
 
 # 편향
 BIAS_RATIO = 0.1                                        # 편향 강도 (0: 편향 없음, 1: 최대 편향)

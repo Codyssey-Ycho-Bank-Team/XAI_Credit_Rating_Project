@@ -10,6 +10,9 @@ __pycache__/
 # Kaggle 원본 데이터 (재배포 금지, 로더가 자동으로 다운로드)
 data/raw/
 
+# 파이프라인 결과 (python -m src.data.pipeline으로 다시 만들 수 있음)
+data/processed/
+
 # 개인 학습 자료, 과제 원문
 개념 설명/
 docs/과제*.md
