@@ -1,9 +1,5 @@
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
-from src.data.preprocessor import FEATURE_GROUPS, load_processed_splits
-from src.data.loader import TARGET_COL
+from src.config import FEATURE_GROUPS, TARGET
+from src.data.pipeline import load_processed_splits
 from lightgbm import LGBMClassifier
 from sklearn.model_selection import StratifiedKFold, RandomizedSearchCV
 from scipy.stats import randint, uniform
@@ -14,7 +10,7 @@ from imblearn.over_sampling import SMOTE
 
 splits = load_processed_splits()
 X_train = splits['train'][FEATURE_GROUPS['combined']]
-y_train = splits['train'][TARGET_COL]
+y_train = splits['train'][TARGET]
 
 # 불균형 처리 방식 선택: class_weight 또는 smote
 # IMBALANCE_METHOD = 'class_weight'

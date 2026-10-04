@@ -1,9 +1,5 @@
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
-from src.data.preprocessor import FEATURE_GROUPS, load_processed_splits
-from src.data.loader import TARGET_COL
+from src.config import FEATURE_GROUPS, TARGET
+from src.data.pipeline import load_processed_splits
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 import time
@@ -13,7 +9,7 @@ from imblearn.over_sampling import SMOTE
 
 splits = load_processed_splits()
 X_train = splits['train'][FEATURE_GROUPS['combined']]
-y_train = splits['train'][TARGET_COL]
+y_train = splits['train'][TARGET]
 
 # IMBALANCE_METHOD = 'class_weight'
 IMBALANCE_METHOD = 'smote'
