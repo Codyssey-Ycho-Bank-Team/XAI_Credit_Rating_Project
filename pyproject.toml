@@ -5,23 +5,39 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "xai-credit-rating"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
+# 의존성 원본. requirements.txt, requirements-dev.txt는 이 목록에서 uv로 자동 생성한다 (직접 수정 금지).
+#   uv pip compile pyproject.toml --universal --python-version 3.14 -o requirements.txt
+#   uv pip compile pyproject.toml --extra dev --universal --python-version 3.14 -o requirements-dev.txt
 dependencies = [
+    # 데이터
     "pandas==3.0.6",
-    "kagglehub==1.0.2",
-    "python-dotenv==1.2.3",
-    "scikit-learn==1.9.1",
-    "joblib==1.6.0",
     "numpy==2.5.3",
     "scipy==1.18.1",
     "pyarrow==25.0.1",
+    "kagglehub==1.0.2",
+    "python-dotenv==1.2.3",
+    # 모델링
+    "scikit-learn==1.9.1",
+    "imbalanced-learn==0.14.2",
+    "xgboost==3.4.1",
+    "lightgbm==4.7.0",
+    "joblib==1.6.0",
+    # XAI, 시각화
+    "shap==0.52.0",
+    "matplotlib==3.11.2",
+    # 실험 추적
+    "mlflow==3.16.1",
 ]
 
 [project.optional-dependencies]
 dev = [
     "jupyter==1.1.1",
-    "matplotlib==3.11.2",
+    "pytest==9.1.1",
 ]
 
 [tool.setuptools.packages.find]
 include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
