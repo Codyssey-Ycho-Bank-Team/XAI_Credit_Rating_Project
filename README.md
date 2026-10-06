@@ -19,11 +19,11 @@ Kaggle 데이터에는 `cs-training.csv`와 `cs-test.csv`가 있습니다. `cs-t
 | --- | --- |
 | 데이터 파이프라인 (로더, 시뮬레이터, 전처리, 분할) | ✅ 완료 |
 | 모델 학습 (LR, XGBoost, LightGBM) | 🔄 진행 중 |
-| MLflow 실험 추적 | ⏳ 예정 |
+| MLflow 실험 추적 | 🔄 진행 중 (서버 설정 완료, 실험 기록 예정) |
 | XAI (SHAP, 거절 사유) | ⏳ 예정 |
 | 공정성 검증, Bias Mitigation | ⏳ 예정 |
 | ANOVA 통계 검증 | ⏳ 예정 |
-| API (FastAPI), 대시보드 (Streamlit), Docker | ⏳ 예정 |
+| API (FastAPI), 대시보드 (Streamlit), Docker | ⏳ 예정 (docker-compose는 MLflow만 설정됨) |
 
 ## 팀 구성원 역할
 
@@ -36,7 +36,23 @@ Kaggle 데이터에는 `cs-training.csv`와 `cs-test.csv`가 있습니다. `cs-t
 
 ## 실행 방법
 
-### 1. 설치
+### Docker로 실행
+
+[Docker Desktop](https://www.docker.com/products/docker-desktop/)이 필요합니다. 데이터 파일과 `.env` 없이, Git에 있는 파일만으로 실행됩니다.
+
+```bash
+docker-compose up
+```
+
+| 서비스 | 주소 | 상태 |
+| --- | --- | --- |
+| MLflow UI | http://localhost:5000 | ✅ |
+| API | http://localhost:8000 | ⏳ 예정 |
+| 대시보드 | http://localhost:8501 | ⏳ 예정 |
+
+### 개발 환경
+
+#### 1. 설치
 
 Python 3.14와 [uv](https://docs.astral.sh/uv/)가 필요합니다.
 
@@ -50,11 +66,11 @@ uv pip install -e . --no-deps
 
 마지막 줄은 이 프로젝트를 패키지로 설치해서, 어느 위치에서 실행해도 `from src...` import가 동작하게 합니다.
 
-### 2. 환경 변수
+#### 2. 환경 변수
 
 `.env.example`을 복사해 `.env`를 만들고 Kaggle API 키를 넣습니다. 자세한 내용은 [환경 변수](#환경-변수)를 봅니다.
 
-### 3. 데이터 파이프라인
+#### 3. 데이터 파이프라인
 
 ```bash
 python -m src.data.pipeline
@@ -64,7 +80,15 @@ python -m src.data.pipeline
 - 결과는 `data/processed/`와 `models/preprocessor_v1.0.joblib`에 저장됩니다.
 - 마지막 출력에서 세 데이터 모두 피처 22개, 결측치 0개인지 확인합니다.
 
-### 4. 모델 노트북
+#### 4. MLflow 서버
+
+모델을 학습하기 전에 켭니다. 기록 방법은 [MLflow 실험 기록](#mlflow-실험-기록)을 봅니다.
+
+```bash
+docker-compose up -d mlflow
+```
+
+#### 5. 모델 노트북
 
 프로젝트 루트에서 실행합니다 (그림을 `docs/`에 저장하기 때문).
 
@@ -80,6 +104,7 @@ XAI_Credit_Rating_Project/
 │   ├── raw/                     # Kaggle 원본 (자동 다운로드)
 │   └── processed/               # 파이프라인 결과 (parquet 6개 + metadata.json)
 ├── docs/                        # 모델 실험 기록, 그림
+├── mlflow_data/                 # MLflow 기록 (mlflow.db + artifacts/), Git에 올림. 첫 학습 때 생성
 ├── models/
 │   └── preprocessor_v1.0.joblib # 학습된 전처리기 (API에서 새 고객 변환용)
 ├── notebooks/
@@ -92,12 +117,15 @@ XAI_Credit_Rating_Project/
 │   └── 08_shap_global.py        # SHAP 전역 해석
 ├── src/
 │   ├── config.py                # 경로, 임계값, 피처 목록 등 모든 설정값
-│   └── data/
-│       ├── loader.py            # 원본 로드 (없으면 Kaggle 다운로드)
-│       ├── simulator.py         # 대안 변수 5개, 씬파일러, 보호 속성, 편향 생성
-│       ├── preprocessor.py      # 오류 행 삭제, 분할, 전처리기(CreditPreprocessor)
-│       └── pipeline.py          # 전체 순서 실행, 결과 저장/불러오기
+│   ├── data/
+│   │   ├── loader.py            # 원본 로드 (없으면 Kaggle 다운로드)
+│   │   ├── simulator.py         # 대안 변수 5개, 씬파일러, 보호 속성, 편향 생성
+│   │   ├── preprocessor.py      # 오류 행 삭제, 분할, 전처리기(CreditPreprocessor)
+│   │   └── pipeline.py          # 전체 순서 실행, 결과 저장/불러오기
+│   └── models/
+│       └── tracking.py          # MLflow 연결, run 시작, 데이터 설정·모델 기록, 최종 모델 등록
 ├── .env.example                 # 환경 변수 템플릿
+├── docker-compose.yml           # API + 대시보드 + MLflow 실행 설정 (현재 MLflow만)
 ├── pyproject.toml               # 의존성 원본
 ├── requirements.txt             # 실행용 잠금 파일 (uv 자동 생성)
 └── requirements-dev.txt         # 개발용 잠금 파일 (uv 자동 생성)
@@ -108,6 +136,7 @@ XAI_Credit_Rating_Project/
 | 이름 | 설명 | 필수 |
 | --- | --- | --- |
 | `KAGGLE_API_TOKEN` | 원본 데이터 자동 다운로드용 Kaggle API 키. Kaggle → Settings → API에서 발급합니다. 대회 페이지에서 규칙 동의(Join Competition)도 해야 받을 수 있습니다. | `data/raw/cs-training.csv`가 없을 때만 |
+| `MLFLOW_TRACKING_URI` | 학습 코드가 기록을 보낼 MLflow 서버 주소. 없으면 `http://localhost:5000`을 씁니다. | 아니요 |
 
 ## 데이터 파이프라인
 
@@ -155,6 +184,50 @@ raw = load_raw_splits()                                 # 원래 값 (예: 통�
 - 전통 / 대안 / 통합 모델 비교는 `FEATURE_GROUPS["traditional"]`(17개), `["alternative"]`(5개), `["combined"]`(22개)를 씁니다.
 - SMOTE 같은 불균형 처리는 **Train에만** 적용합니다.
 - 대안 데이터는 부도 여부를 바탕으로 만든 **시뮬레이션 데이터**입니다.
+
+## MLflow 실험 기록
+
+### 구조
+
+```
+학습 코드 ──기록──▶ MLflow 서버 (localhost:5000) ──저장──▶ mlflow_data/ (mlflow.db + artifacts/)
+```
+
+`mlflow_data/`는 Git에 올립니다. 평가자가 `docker-compose up`만 해도 학습 기록과 모델을 볼 수 있게 하기 위해서입니다.
+
+### 기록 방법
+
+```python
+import mlflow
+from src.models.tracking import log_data_settings, log_model, register_final_model, start_experiment, start_run
+
+start_experiment("xgboost")                         # 서버 연결 + 실험 선택 (없으면 생성)
+with start_run("xgb_smote_combined") as run:
+    log_data_settings()                             # 데이터 설정 (thin_filer_ratio, bias_ratio 등)
+    mlflow.log_params({"max_depth": 6, "imbalance": "smote", "feature_group": "combined"})
+    mlflow.log_metrics({"auc": auc, "ks": ks, "f1": f1})
+    log_model(model)                                # 모델 파일
+
+register_final_model(run.info.run_id)               # 최종 모델 1개만 등록
+```
+
+- 기록은 항상 MLflow 서버를 거칩니다 (`tracking.py`의 함수가 서버에 연결합니다). 서버 없이 파일에 바로 기록하면 모델 파일 위치가 내 PC 경로로 저장돼서, 다른 PC에서는 모델 파일을 열 수 없습니다.
+- `mlflow.start_run()`, `mlflow.sklearn.log_model()` 대신 `start_run()`, `log_model()`을 씁니다. MLflow가 자동으로 적는 내 PC 정보(OS 사용자 이름, 파일 전체 경로)를 Git 사용자 이름과 프로젝트 기준 경로로 바꿔 기록합니다.
+
+### 기록 규칙
+
+| 항목 | 규칙 |
+| --- | --- |
+| 실험 | 모델별 3개: `logistic_regression`, `xgboost`, `lightgbm` |
+| params | 하이퍼파라미터, 불균형 처리 방법, 피처 그룹, 데이터 설정(`log_data_settings()`) |
+| metrics | AUC, KS, F1 |
+| artifacts | 모델 파일 (`log_model()`) |
+| 최종 모델 | `register_final_model()`로 `credit_risk_model`에 등록 (alias `production`, 태그 `stage: Production`). 다시 등록하면 예전 버전의 태그는 `stage: Archived`로 바뀝니다. |
+
+### 주의할 점
+
+- `mlflow.db`는 파일 하나라서, 여러 명이 각자 기록해서 올리면 Git에서 합칠 수 없습니다. **최종 기록은 한 사람만 커밋합니다.**
+- MLflow 3부터 Stage 기능이 폐지 예정(deprecated)이라, 최종 모델은 alias와 태그로 표시합니다.
 
 ## 의존성 관리
 

@@ -1,0 +1,13 @@
+# docker-compose up 한 번으로 서비스를 실행한다 (API, 대시보드는 만들 때 추가)
+services:
+  mlflow:                                   # 실험 기록 UI (localhost:5000)
+    image: ghcr.io/mlflow/mlflow:v3.16.1    # 공식 이미지. pyproject.toml의 mlflow 버전과 맞춘다
+    # 기록(params, metrics 등)은 sqlite DB에, 모델 파일은 artifacts 폴더에 저장한다
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow_data/mlflow.db
+      --artifacts-destination /mlflow_data/artifacts
+    ports:
+      - "5000:5000"                         # 내 PC 5000번 → 컨테이너 5000번
+    volumes:
+      - ./mlflow_data:/mlflow_data          # 기록을 프로젝트 폴더에 저장한다 (Git에 올려서 평가자도 볼 수 있게)

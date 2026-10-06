@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -12,6 +13,11 @@ DATA_SET_PATH = DOWNLOAD_PATH / "cs-training.csv"           # 사용하는 원�
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"         # 파이프라인 결과(parquet, metadata.json) 저장 폴더
 MODEL_DIR = PROJECT_ROOT / "models"                         # 학습된 모델 저장 폴더
 PREPROCESSOR_PATH = MODEL_DIR / "preprocessor_v1.0.joblib"  # 학습된 전처리기 저장 경로
+
+# MLflow
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")  # MLflow 서버 주소 (.env로 바꿀 수 있음)
+REGISTERED_MODEL_NAME = "credit_risk_model"   # Model Registry에 등록할 최종 모델 이름
+MODEL_ALIAS = "production"                    # 최종 모델 표시 (alias)
 
 # 데이터 분할
 RANDOM_STATE = 42                 # 무작위 작업의 시드값 (결과 재현용)
