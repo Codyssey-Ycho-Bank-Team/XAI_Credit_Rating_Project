@@ -69,7 +69,8 @@ class CreditPreprocessor(BaseEstimator, TransformerMixin):
             "DebtRatio": float(df.loc[normal_income, "DebtRatio"].quantile(CLIP_QUANTILE)),
             "monthly_debt_payment": float(df["monthly_debt_payment"].quantile(CLIP_QUANTILE)),
         }
-        self.scaler_ = StandardScaler().fit(self._fill_and_clip(df)[SCALE_COLS])
+        self.scale_cols_ = [col for col in SCALE_COLS if col in self.feature_cols]   # feature_cols 중 스케일링할 컬럼
+        self.scaler_ = StandardScaler().fit(self._fill_and_clip(df)[self.scale_cols_])
 
         if self.verbose:
             print("========== 전처리 통계값 (Train) ==========")
@@ -80,7 +81,7 @@ class CreditPreprocessor(BaseEstimator, TransformerMixin):
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """fit()에서 저장한 통계값으로 처리하고 feature_cols만 반환한다."""
         df = self._fill_and_clip(_add_derived_columns(X))
-        df[SCALE_COLS] = self.scaler_.transform(df[SCALE_COLS])
+        df[self.scale_cols_] = self.scaler_.transform(df[self.scale_cols_])
         return df[self.feature_cols]
 
     def save(self, path: Path = PREPROCESSOR_PATH) -> None:

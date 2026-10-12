@@ -10,9 +10,16 @@ load_dotenv(PROJECT_ROOT / ".env")                      # .env의 환경 변수(
 # 경로
 DOWNLOAD_PATH = PROJECT_ROOT / "data" / "raw"               # Kaggle 원본 데이터 저장 폴더
 DATA_SET_PATH = DOWNLOAD_PATH / "cs-training.csv"           # 사용하는 원본 데이터 파일
+HOME_CREDIT_PATH = DOWNLOAD_PATH / "home_credit"            # Home Credit 원본 저장 폴더 (씬파일러 가중치 근거용)
+HOME_CREDIT_APPLICATION_PATH = HOME_CREDIT_PATH / "application_train.csv"   # 고객 정보 (고객 1명 = 1행)
+HOME_CREDIT_BUREAU_PATH = HOME_CREDIT_PATH / "bureau.csv"                   # CB 기록 (대출·카드 1건 = 1행)
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"         # 파이프라인 결과(parquet, metadata.json) 저장 폴더
 MODEL_DIR = PROJECT_ROOT / "models"                         # 학습된 모델 저장 폴더
 PREPROCESSOR_PATH = MODEL_DIR / "preprocessor_v1.0.joblib"  # 학습된 전처리기 저장 경로
+
+# Kaggle 데이터셋 이름
+GMSC_COMPETITION = "GiveMeSomeCredit"                   # Give Me Some Credit
+HOME_CREDIT_COMPETITION = "home-credit-default-risk"    # Home Credit Default Risk
 
 # MLflow
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")  # MLflow 서버 주소 (.env로 바꿀 수 있음)
@@ -45,15 +52,20 @@ AGE_GROUP_LABELS = ["20-34", "35-54", "55+"]  # 연령대 이름
 
 # 씬파일러
 THIN_FILER_RATIO = 0.3                      # 전체 중 씬파일러로 만들 비율
-OPEN_LINES_WEIGHTS = [(0, 4.0), (3, 2.0)]   # NumberOfOpenCreditLinesAndLoans: 0 → ×4, 1~3 → ×2, 4 이상 → ×1
-REAL_ESTATE_ZERO_WEIGHT = 1.5               # NumberRealEstateLoansOrLines = 0 → ×1.5
+THIN_AGE_CAP = 30                           # 씬파일러 확률 계산 때 나이 상한. 30세 이후는 씬파일러 비율이 비슷함 (근거: notebooks/eda_home_credit.ipynb 7-1)
+THIN_DEPENDENTS_CAP = 3                     # 씬파일러 확률 계산 때 부양가족 상한. 4명 이상은 드물어 계수가 불안정함
+THIN_FILER_COEFS = {"age": -0.1348, "income_pct": -0.6517, "dependents": -0.0724, "debt_ratio_pct": 0.4298}   # 씬파일러 확률 로지스틱 회귀 계수 (근거: notebooks/eda_home_credit.ipynb 7-3)
 
 # 대안 변수
 ALT_COLS = [                # 생성할 대안 변수 5개
     "telecom_payment_rate", "utility_payment_rate", "spending_consistency",
     "regular_payment_count", "app_login_frequency",
 ]
-ALT_TARGET_SHIFT = 1.85     # 부도 고객의 z를 낮추는 양 (타겟과 상관 약 0.4)
+ALT_SCORE_CORR_MAX = 0.9    # 대안 변수와 신용 점수의 상관(ρ) 상한. 1이면 대안 변수가 신용 점수의 복사본이 된다
+ALT_TARGET_CORR = {         # 대안 변수별 타겟과의 목표 상관계수 (절댓값). 부도 예측 근거가 있으면 0.4, 없으면 0.3 (근거: README.md). ρ = 목표 ÷ r 계산에 쓴다
+    "telecom_payment_rate": 0.4, "utility_payment_rate": 0.4, "spending_consistency": 0.3,
+    "regular_payment_count": 0.3, "app_login_frequency": 0.3,
+}
 ALT_NOISE_CORR = [          # 대안 변수끼리의 노이즈 상관 (ALT_COLS 순서)
     [1.0, 0.5, 0.3, 0.0, 0.0],
     [0.5, 1.0, 0.3, 0.0, 0.0],
@@ -84,6 +96,7 @@ FLAG_COLS = [                            # 0/1 표시 컬럼 (스케일링하지
 ]
 FEATURE_COLS = SCALE_COLS + FLAG_COLS    # 모델에 넣을 피처 전체 (통합 그룹)
 TRADITIONAL_COLS = RAW_NUMERIC_COLS + ["monthly_debt_payment"] + FLAG_COLS   # 전통 그룹 (ANOVA 검증 1, 씬파일러 AUC 비교용)
+CREDIT_SCORE_COLS = [col for col in TRADITIONAL_COLS if col != "is_thin_filer"]   # 신용 점수 모델 입력 (씬파일러 결측 처리 전이라 is_thin_filer는 모두 0)
 FEATURE_GROUPS = {                       # 피처 그룹 (ANOVA 검증 1, 씬파일러 AUC 비교용)
     "traditional": TRADITIONAL_COLS,     # 전통: 원본 금융 데이터 + 파생 컬럼 + 표시 컬럼 (17개)
     "alternative": ALT_COLS,             # 대안: 시뮬레이션한 대안 변수 (5개)
