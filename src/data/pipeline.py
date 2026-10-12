@@ -36,15 +36,17 @@ def build_dataset(
     seed: int = RANDOM_STATE,
     save_outputs: bool = True,
 ) -> Dataset:
-    """데이터 파이프라인: 로더 → 오류 행 삭제 → 시뮬레이터 → 분할 → 전처리
+    """데이터 파이프라인: 로더 → 오류 행 삭제 → 분할 → 시뮬레이터 → 전처리
+    분할을 시뮬레이터보다 먼저 하는 이유: 시뮬레이터의 신용 점수 모델을 Train으로만 학습하기 위해서다.
     seed는 시뮬레이션에만 쓴다. 분할은 config의 RANDOM_STATE로 고정한다.
     save_outputs가 True면 전처리기, parquet 6개, metadata.json을 함께 저장한다 (서로 같은 설정이어야 하므로)."""
     df = load_give_me_some_credit()
     df = drop_invalid_rows(df)
-    df = generate_alternative_data(
-        df, thin_filer_ratio=thin_filer_ratio, bias_ratio=bias_ratio, bias_groups=bias_groups, seed=seed
-    )
     train, valid, test = split_data(df)
+    df = generate_alternative_data(
+        df, train.index, thin_filer_ratio=thin_filer_ratio, bias_ratio=bias_ratio, bias_groups=bias_groups, seed=seed
+    )
+    train, valid, test = df.loc[train.index], df.loc[valid.index], df.loc[test.index]
 
     preprocessor = CreditPreprocessor().fit(train)
     data = Dataset(

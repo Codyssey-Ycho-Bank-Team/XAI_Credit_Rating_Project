@@ -102,6 +102,7 @@ python notebooks/03_baseline_model.py
 XAI_Credit_Rating_Project/
 ├── data/                        # Git에 올리지 않음
 │   ├── raw/                     # Kaggle 원본 (자동 다운로드)
+│   │   └── home_credit/         # Home Credit 원본 2개 (씬파일러 가중치 근거용)
 │   └── processed/               # 파이프라인 결과 (parquet 6개 + metadata.json)
 ├── docs/                        # 모델 실험 기록, 그림
 ├── mlflow_data/                 # MLflow 기록 (mlflow.db + artifacts/), Git에 올림. 첫 학습 때 생성
@@ -118,7 +119,7 @@ XAI_Credit_Rating_Project/
 ├── src/
 │   ├── config.py                # 경로, 임계값, 피처 목록 등 모든 설정값
 │   ├── data/
-│   │   ├── loader.py            # 원본 로드 (없으면 Kaggle 다운로드)
+│   │   ├── loader.py            # 원본 로드 (Give Me Some Credit, Home Credit / 없으면 Kaggle 다운로드)
 │   │   ├── simulator.py         # 대안 변수 5개, 씬파일러, 보호 속성, 편향 생성
 │   │   ├── preprocessor.py      # 오류 행 삭제, 분할, 전처리기(CreditPreprocessor)
 │   │   └── pipeline.py          # 전체 순서 실행, 결과 저장/불러오기
@@ -135,7 +136,7 @@ XAI_Credit_Rating_Project/
 
 | 이름 | 설명 | 필수 |
 | --- | --- | --- |
-| `KAGGLE_API_TOKEN` | 원본 데이터 자동 다운로드용 Kaggle API 키. Kaggle → Settings → API에서 발급합니다. 대회 페이지에서 규칙 동의(Join Competition)도 해야 받을 수 있습니다. | `data/raw/cs-training.csv`가 없을 때만 |
+| `KAGGLE_API_TOKEN` | 원본 데이터 자동 다운로드용 Kaggle API 키. Kaggle → Settings → API에서 발급합니다. 두 대회 페이지([Give Me Some Credit](https://www.kaggle.com/c/GiveMeSomeCredit), [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk))에서 각각 규칙 동의(Join Competition)도 해야 받을 수 있습니다. | `data/raw/`에 원본 파일이 없을 때만 |
 | `MLFLOW_TRACKING_URI` | 학습 코드가 기록을 보낼 MLflow 서버 주소. 없으면 `http://localhost:5000`을 씁니다. | 아니요 |
 
 ## 데이터 파이프라인
@@ -143,15 +144,33 @@ XAI_Credit_Rating_Project/
 ### 흐름
 
 ```
-로더 → age = 0 행 삭제 → 시뮬레이터 → 분할(70:15:15, stratify) → 전처리(Train으로만 fit) → 저장
+로더 → age = 0 행 삭제 → 분할(70:15:15, stratify) → 시뮬레이터 → 전처리(Train으로만 fit) → 저장
 ```
 
 | 단계 | 내용 |
 | --- | --- |
-| 시뮬레이터 | 대안 변수 5개 생성 (Cholesky + Copula, 타겟과 상관계수 절댓값 0.3 ~ 0.5), 씬파일러 30% (연체 컬럼 3개를 결측으로 만듦), 성별(50:50)과 연령대, `bias_ratio`만큼 특정 집단의 대안 변수를 낮춤 |
+| 시뮬레이터 | 성별(50:50)과 연령대 → 씬파일러 30% 선택 (Home Credit에서 구한 나이·소득·부양가족·상환 부담 계수로 확률을 정함, 근거: `notebooks/eda_home_credit.ipynb`) → 신용 점수 (전통 변수로 학습한 로지스틱 회귀, Train으로만 학습) → 대안 변수 5개 (신용 점수 + 노이즈를 Cholesky + Copula로 변환, 신용 점수와의 상관 ρ = 변수별 목표 상관 ÷ r, `bias_ratio`만큼 특정 집단의 값을 낮춤) → 씬파일러의 연체 컬럼 3개를 결측으로 만듦 |
 | 전처리 | `notebooks/eda.ipynb`의 규칙대로 결측치·이상치 처리, 표시 컬럼 추가, StandardScaler. 중앙값·분위수·평균·표준편차는 Train으로만 계산합니다 (데이터 누수 방지). |
 
 설정값(씬파일러 비율, 편향 강도와 대상 등)은 모두 `src/config.py`에 있습니다.
+
+### 대안 변수별 목표 상관계수
+
+과제 요구사항(타겟과 상관계수 0.3 ~ 0.5) 안에서, 부도 예측에 쓸 수 있다는 근거가 있는 변수는 0.4, 근거가 없거나 약한 변수는 하한인 0.3으로 정했습니다 (`config.py`의 `ALT_TARGET_CORR`). 시뮬레이터는 이 값으로 신용 점수와의 상관 ρ(= 목표 상관 ÷ r, 상한 0.9)를 정합니다.
+
+| 변수 | 목표 상관 (절댓값) | 실제 상관 (전체) | 근거 | 출처 |
+| --- | --- | --- | --- | --- |
+| `telecom_payment_rate` | 0.4 | −0.355 | 통신·공과금 납부 기록만으로도 카드·주택담보대출 연체를 예측할 수 있음 | [PERC (2015)](https://www.perc.net/wp-content/uploads/2015/05/Alt-Data-and-Traditional-Accounts.pdf) |
+| `utility_payment_rate` | 0.4 | −0.346 | 위와 같음 (같은 연구에서 통신비와 함께 다룸) | [PERC (2015)](https://www.perc.net/wp-content/uploads/2015/05/Alt-Data-and-Traditional-Accounts.pdf) |
+| `spending_consistency` | 0.3 | −0.284 | 소비 변동성을 직접 다룬 연구는 없음 (소상공인 계좌 잔액 변동성 연구만 있음) | [FinRegLab (2025)](https://finreglab.org/wp-content/uploads/2025/06/FinRegLab_2025-06-03_Press-Release_Study-Shows-Cash-Flow-Data-Can-Expand-Small-Business-Lending-1.pdf) |
+| `regular_payment_count` | 0.3 | −0.253 | 정기결제 건수를 다룬 연구를 찾지 못함 | - |
+| `app_login_frequency` | 0.3 | −0.251 | 앱 사용 행태 연구는 있으나 로그인 빈도만 따로 본 연구는 없고 예측력도 약함 | [ABFER (2019)](https://abfer.org/media/abfer-events-2019/annual-conference/special/28-P3-Fintech-and-Credit-Scoring-for-Millenial-Generation.pdf) |
+
+**목표보다 낮게 나오는 이유와 용인하는 이유**
+- 대안 변수는 신용 점수로만 만들고 타겟을 직접 섞지 않습니다. 그래서 타겟과의 상관은 신용 점수 자체의 상관(r ≈ 0.34)을 넘을 수 없고, Copula 변환(Beta, Poisson 등)을 거치며 조금 더 낮아집니다.
+- 타겟을 직접 섞어 0.3 ~ 0.5를 맞추면, 5개 변수에 같은 타겟이 쌓여 통합 모델 AUC가 0.90까지 올라갑니다. 대안 변수만 쓴 모델이 전통 변수 모델보다 높아지는, 현실적이지 않은 결과입니다. 섞지 않으면 통합 AUC는 0.86입니다 (XGBoost, Test).
+- 과제의 생성 로직 표도 `regular_payment_count`와 `app_login_frequency`는 타겟 없이 소득·연령대로만 만들어, 이 두 변수의 상관이 0.3에 못 미치는 설계입니다.
+- 하한에서 가장 멀리 벗어난 변수도 0.05 이내(−0.251)입니다.
 
 ### 결과물 (`data/processed/`)
 
