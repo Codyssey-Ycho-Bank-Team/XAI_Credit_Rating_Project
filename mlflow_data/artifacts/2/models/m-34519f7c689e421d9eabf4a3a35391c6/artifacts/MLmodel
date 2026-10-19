@@ -1,0 +1,52 @@
+artifact_path: mlflow-artifacts:/2/models/m-34519f7c689e421d9eabf4a3a35391c6/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.14.8
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.9.1
+    skops_trusted_types: null
+is_signature_from_type_hint: false
+mlflow_version: 3.16.1
+model_id: m-34519f7c689e421d9eabf4a3a35391c6
+model_size_bytes: 399790
+model_uuid: m-34519f7c689e421d9eabf4a3a35391c6
+prompts: null
+run_id: c16141ec0c794ea3b0161bff0d98a1e8
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "double", "name": "RevolvingUtilizationOfUnsecuredLines", "required":
+    true}, {"type": "double", "name": "age", "required": true}, {"type": "double",
+    "name": "NumberOfTime30-59DaysPastDueNotWorse", "required": true}, {"type": "double",
+    "name": "DebtRatio", "required": true}, {"type": "double", "name": "MonthlyIncome",
+    "required": true}, {"type": "double", "name": "NumberOfOpenCreditLinesAndLoans",
+    "required": true}, {"type": "double", "name": "NumberOfTimes90DaysLate", "required":
+    true}, {"type": "double", "name": "NumberRealEstateLoansOrLines", "required":
+    true}, {"type": "double", "name": "NumberOfTime60-89DaysPastDueNotWorse", "required":
+    true}, {"type": "double", "name": "NumberOfDependents", "required": true}, {"type":
+    "double", "name": "monthly_debt_payment", "required": true}, {"type": "double",
+    "name": "telecom_payment_rate", "required": true}, {"type": "double", "name":
+    "utility_payment_rate", "required": true}, {"type": "double", "name": "spending_consistency",
+    "required": true}, {"type": "double", "name": "regular_payment_count", "required":
+    true}, {"type": "double", "name": "app_login_frequency", "required": true}, {"type":
+    "double", "name": "is_revolving_outlier", "required": true}, {"type": "double",
+    "name": "is_income_invalid", "required": true}, {"type": "double", "name": "is_income_missing",
+    "required": true}, {"type": "double", "name": "is_dependents_missing", "required":
+    true}, {"type": "double", "name": "is_late_unknown", "required": true}, {"type":
+    "double", "name": "is_thin_filer", "required": true}]'
+  outputs: '[{"type": "long", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-10-19 07:59:21.229294'
