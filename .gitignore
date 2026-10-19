@@ -1,30 +1,27 @@
-# Python
+# 환경 변수 (API 키가 들어 있음)
+.env
+
+# 가상환경, 캐시, 빌드 결과
+.venv/
 __pycache__/
 *.py[cod]
 *.egg-info/
-.venv/
-venv/
-env/
 
-# 데이터 용량이 커서 각자 다운
+# Kaggle 원본 데이터 (재배포 금지, 로더가 자동으로 다운로드)
 data/raw/
-data/interim/
 
+# 파이프라인 결과 (python -m src.data.pipeline으로 다시 만들 수 있음)
+data/processed/
 
-# MLflow
-mlruns/
-mlflow.db
-
-# 환경 변수
-.env
+# 개인 학습 자료, 과제 원문
+개념 설명/
+docs/과제*.md
 
 # Jupyter
 .ipynb_checkpoints/
 
-# IDE
+# IDE, OS
 .vscode/
 .idea/
-
-# OS
 Thumbs.db
 .DS_Store

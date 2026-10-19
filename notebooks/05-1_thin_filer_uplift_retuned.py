@@ -1,9 +1,5 @@
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
-from src.data.preprocessor import FEATURE_GROUPS, load_processed_splits
-from src.data.loader import TARGET_COL
+from src.config import FEATURE_GROUPS, TARGET
+from src.data.pipeline import load_processed_splits
 from xgboost import XGBClassifier
 from sklearn.model_selection import StratifiedKFold, RandomizedSearchCV
 from sklearn.metrics import roc_auc_score
@@ -12,7 +8,7 @@ import time
 
 splits = load_processed_splits()
 train, test = splits['train'], splits['test']
-y_train, y_test = train[TARGET_COL], test[TARGET_COL]
+y_train, y_test = train[TARGET], test[TARGET]
 scale_pos = (y_train == 0).sum() / (y_train == 1).sum()
 is_thin_test = test['is_thin_filer'] == 1
 

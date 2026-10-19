@@ -1,81 +1,73 @@
-"""
-Give Me Some Credit 데이터셋 로더
--> CSV 파일을 읽어서 표(Data Frame)으로 돌려주고, 읽을 때 표의 상태를 보고해주는 파일
+import zipfile
+from pathlib import Path
+
+import kagglehub
+import pandas as pd
+from src.config import (
+    DATA_SET_PATH, DOWNLOAD_PATH, GMSC_COMPETITION, HOME_CREDIT_APPLICATION_PATH, HOME_CREDIT_BUREAU_PATH,
+    HOME_CREDIT_COMPETITION, HOME_CREDIT_PATH,
+)
 
 
-"""
-
-import logging # 출력용
-import os
-from pathlib import Path # 파일 경로 다루는 라이브러리
-
-import pandas as pd # 표 다루는 라이브러리
-
-logger = logging.getLogger(__name__)
-
-# 데이터 폴더 위치 계산
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DATA_DIR = PROJECT_ROOT / 'data' / 'raw'
-
-TARGET_COL = 'SeriousDlqin2yrs' # 정답 컬럼 (1 = 부도, 0 = 정상)
-LATE_PAYMENT_COLS = [
-    'NumberOfTime30-59DaysPastDueNotWorse', # 연체컬럼 3가지
-    'NumberOfTimes90DaysLate',
-    'NumberOfTime60-89DaysPastDueNotWorse',
-]
-
-# 폴더 경로 알려주는 함수
-
-# DATA_DIR 환경변수(프로그램 밖의 설정 쪽지)가 있으면 그 경로를, 없으면 기본 경로(data/raw)를 쓴다
-# -> Docker처럼 폴더 구조가 다른 곳에서도 코드를 안 고치고 쪽지만 바꾸면 된다
-def get_data_dir() -> Path:
-    return Path(os.getenv('DATA_DIR', DEFAULT_DATA_DIR))
+def _download_if_missing(download_dir: Path, competition: str, path: Path) -> None:
+    """Kaggle 대회 데이터 중 파일 하나를 download_dir에 받는다. 이미 있으면 건너뛴다."""
+    if path.exists():
+        print("이미 파일이 있어 다운로드를 건너뜁니다:", path)
+        return
+    download_dir.mkdir(parents=True, exist_ok=True)
+    result = kagglehub.competition_download(competition, path=path.name, output_dir=str(download_dir))
+    print("Path to competition files:", result)
 
 
-def load_give_me_some_credit(filename: str = 'cs-training.csv', describe: bool = True) -> pd.DataFrame:
-    path = get_data_dir() / filename
-    if not path.exists():
-        raise FileNotFoundError(
-            f'데이터 파일을 찾을 수 없습니다: {path}\n'
-            f'Kaggle에서 다운로드한 파일을 {get_data_dir()} 에 넣어주세요.'
-        )
+def _extract_if_zip(path: Path) -> None:
+    """다운로드한 파일이 ZIP이면 압축을 푼다. kagglehub가 자동으로 풀지 못하는 경우가 있다."""
+    if not zipfile.is_zipfile(path):
+        return
+    print("ZIP 파일이라 압축을 풉니다:", path)
+    zip_path = path.with_name(path.name + ".zip")
+    path.rename(zip_path)
+    with zipfile.ZipFile(zip_path) as f:
+        f.extract(path.name, path.parent)
+    zip_path.unlink()
 
-    df = pd.read_csv(path, index_col=0)
-    logger.info('데이터 로드 완료: %s (%d행 x %d열)', path.name, df.shape[0], df.shape[1])
 
-    if describe:
-        describe_data(df)
+def _print_summary(df: pd.DataFrame, name: str) -> None:
+    """컬럼명, 데이터 타입, 결측치 개수와 비율을 출력한다."""
+    summary = pd.DataFrame({
+        "데이터 타입": df.dtypes.astype(str),
+        "결측치 개수": df.isna().sum(),
+        "결측치 비율(%)": (df.isna().mean() * 100).round(2),
+    })
+    summary.index.name = "컬럼명"
+
+    print(f"========== {name} 요약 ({len(df):,}행, {df.shape[1]}열) ==========")
+    print(summary.to_string())
+
+
+def load_give_me_some_credit() -> pd.DataFrame:
+    """Give Me Some Credit 학습 데이터를 로드한다. 파일이 없으면 Kaggle에서 다운로드한다."""
+    _download_if_missing(DOWNLOAD_PATH, GMSC_COMPETITION, DATA_SET_PATH)
+    _extract_if_zip(DATA_SET_PATH)
+
+    df = pd.read_csv(DATA_SET_PATH, index_col=0)
+    _print_summary(df, "Give Me Some Credit")
     return df
 
-# 표 만드는 함수
-def describe_data(df: pd.DataFrame) -> pd.DataFrame:
-    summary = pd.DataFrame({
-        'dtype': df.dtypes.astype(str),
-        'missing_count': df.isna().sum(),
-        'missing_ratio(%)': (df.isna().mean() * 100).round(2),
-    })
 
-    logger.info('컬럼 정보 및 결측치 비율:\n%s', summary.to_string())
+def load_home_credit() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Home Credit의 고객 정보(application_train)와 CB 기록(bureau)을 로드한다. 씬파일러 가중치 근거용.
+    파일이 없으면 Kaggle에서 다운로드한다 (대회 페이지에서 규칙 동의가 필요하다)."""
+    for path in [HOME_CREDIT_APPLICATION_PATH, HOME_CREDIT_BUREAU_PATH]:
+        _download_if_missing(HOME_CREDIT_PATH, HOME_CREDIT_COMPETITION, path)
+        _extract_if_zip(path)
 
-    missing_cols = summary[summary['missing_count'] > 0]
-    if missing_cols.empty:
-        logger.info('결측치가 있는 컬럼이 없습니다.')
-    else:
-        for col, row in missing_cols.iterrows():
-            logger.warning('결측치 발견 - %s: %d건 (%.2f%%)', col, row['missing_count'], row['missing_ratio(%)'])
-
-    # 정답(0/1)이 몇 명씩 인지 출력 -> 불균형정도를 바로 볼 수 있게
-    if TARGET_COL in df.columns:
-        counts = df[TARGET_COL].value_counts(dropna=False).sort_index()
-        logger.info('타겟(%s) 분포:\n%s', TARGET_COL, counts.to_string())
-
-    return summary
+    application = pd.read_csv(HOME_CREDIT_APPLICATION_PATH)
+    bureau = pd.read_csv(HOME_CREDIT_BUREAU_PATH)
+    _print_summary(application, "Home Credit application_train")
+    _print_summary(bureau, "Home Credit bureau")
+    return application, bureau
 
 
-if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s [%(levelname)s] %(message)s',
-        datefmt='%H:%M:%S',
-    )
+if __name__ == "__main__":
     load_give_me_some_credit()
+    load_home_credit()
