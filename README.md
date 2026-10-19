@@ -18,8 +18,8 @@ Kaggle 데이터에는 `cs-training.csv`와 `cs-test.csv`가 있습니다. `cs-t
 | 단계 | 상태 |
 | --- | --- |
 | 데이터 파이프라인 (로더, 시뮬레이터, 전처리, 분할) | ✅ 완료 |
-| 모델 학습 (LR, XGBoost, LightGBM) | 🔄 진행 중 |
-| MLflow 실험 추적 | 🔄 진행 중 (서버 설정 완료, 실험 기록 예정) |
+| 모델 학습 (LR, XGBoost, LightGBM) | ✅ 완료 (최종: XGBoost, Test AUC 0.8640) |
+| MLflow 실험 추적 | ✅ 완료 (튜닝·최종 학습 기록, Registry 등록) |
 | XAI (SHAP, 거절 사유) | ⏳ 예정 |
 | 공정성 검증, Bias Mitigation | ⏳ 예정 |
 | ANOVA 통계 검증 | ⏳ 예정 |
@@ -88,7 +88,18 @@ python -m src.data.pipeline
 docker-compose up -d mlflow
 ```
 
-#### 5. 모델 노트북
+#### 5. 튜닝과 최종 학습
+
+```bash
+python -X utf8 -m src.models.tune     # 모델 3개 × 불균형 처리 2가지 튜닝 -> models/best_params.json (약 15분)
+python -m src.models.train            # 최종 모델 3개 학습·평가·저장 -> CV AUC 1위를 Registry에 등록
+```
+
+- `-X utf8`: 한글 Windows에서 scikit-learn이 내부 파일을 cp949로 읽다가 MLflow autolog가 멈추는 문제를 막습니다.
+- `models/best_params.json`이 이미 있으면 튜닝을 건너뛰고 `train`만 실행해도 됩니다.
+- 결과는 `models/{모델명}_v1.0.joblib`와 MLflow(`localhost:5000`)에 저장됩니다.
+
+#### 6. 모델 노트북
 
 프로젝트 루트에서 실행합니다 (그림을 `docs/`에 저장하기 때문).
 
@@ -107,11 +118,13 @@ XAI_Credit_Rating_Project/
 ├── docs/                        # 모델 실험 기록, 그림
 ├── mlflow_data/                 # MLflow 기록 (mlflow.db + artifacts/), Git에 올림. 첫 학습 때 생성
 ├── models/
-│   └── preprocessor_v1.0.joblib # 학습된 전처리기 (API에서 새 고객 변환용)
+│   ├── preprocessor_v1.0.joblib # 학습된 전처리기 (API에서 새 고객 변환용)
+│   ├── {모델명}_v1.0.joblib     # 최종 모델 3개 (logistic_regression, xgboost, lightgbm)
+│   └── best_params.json         # 튜닝 결과 (모델별 불균형 처리 방식, 하이퍼파라미터, fold별 CV AUC)
 ├── notebooks/
 │   ├── eda.ipynb                # EDA: 컬럼별 전처리 규칙과 근거
 │   ├── 03_baseline_model.py     # 모델 3개 × 불균형 처리 2가지 비교
-│   ├── 04-*_hyperparameter_*.py # 하이퍼파라미터 튜닝
+│   ├── 04-*_hyperparameter_*.py # 하이퍼파라미터 튜닝 (이전 방식, 지금은 src/models/tune.py)
 │   ├── 05*_thin_filer_uplift*.py# 씬파일러 AUC 향상 측정
 │   ├── 06_ks_psi.py             # KS, PSI
 │   ├── 07_precision_recall.py   # Precision-Recall 곡선
@@ -124,6 +137,10 @@ XAI_Credit_Rating_Project/
 │   │   ├── preprocessor.py      # 오류 행 삭제, 분할, 전처리기(CreditPreprocessor)
 │   │   └── pipeline.py          # 전체 순서 실행, 결과 저장/불러오기
 │   └── models/
+│       ├── estimators.py        # 모델별 탐색 범위, 불균형 처리 방식, 모델 생성 (tune·train 공통)
+│       ├── tune.py              # 모델 3개 × 불균형 처리 2가지 튜닝 -> best_params.json
+│       ├── train.py             # 최종 학습·평가·저장, MLflow 기록, Registry 등록
+│       ├── metrics.py           # AUC, KS, Precision, Recall, F1, PSI 계산
 │       └── tracking.py          # MLflow 연결, run 시작, 데이터 설정·모델 기록, 최종 모델 등록
 ├── .env.example                 # 환경 변수 템플릿
 ├── docker-compose.yml           # API + 대시보드 + MLflow 실행 설정 (현재 MLflow만)
@@ -238,8 +255,9 @@ register_final_model(run.info.run_id)               # 최종 모델 1개만 등�
 | 항목 | 규칙 |
 | --- | --- |
 | 실험 | 모델별 3개: `logistic_regression`, `xgboost`, `lightgbm` |
+| run 구분 태그 | `run_type` (`tuning` / `final`), `imbalance_method`, `feature_group`. 튜닝 run 아래의 하위 run은 탐색한 조합 하나하나입니다 |
 | params | 하이퍼파라미터, 불균형 처리 방법, 피처 그룹, 데이터 설정(`log_data_settings()`) |
-| metrics | AUC, KS, F1 |
+| metrics | `cv_auc`(fold별), `cv_auc_mean`, `cv_auc_std`, `test_auc`, `test_ks`, `test_precision`, `test_recall`, `test_f1`, `psi_train_test` |
 | artifacts | 모델 파일 (`log_model()`) |
 | 최종 모델 | `register_final_model()`로 `credit_risk_model`에 등록 (alias `production`, 태그 `stage: Production`). 다시 등록하면 예전 버전의 태그는 `stage: Archived`로 바뀝니다. |
 

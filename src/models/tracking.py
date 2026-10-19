@@ -6,6 +6,7 @@ from urllib.request import urlopen
 
 import mlflow
 import mlflow.sklearn
+import pandas as pd
 from mlflow import ActiveRun, MlflowClient
 from mlflow.models.model import ModelInfo
 from sklearn.base import BaseEstimator
@@ -44,10 +45,14 @@ def log_data_settings() -> None:
     })
 
 
-def log_model(model: BaseEstimator) -> ModelInfo:
+def log_model(model: BaseEstimator, input_example: pd.DataFrame | None = None) -> ModelInfo:
     """모델 파일을 현재 run에 저장한다. start_run() 안에서 호출한다.
-    모델 기록에도 내 PC 정보가 따로 적히므로 여기서도 덮어쓴다."""
-    return mlflow.sklearn.log_model(model, name=MODEL_ARTIFACT_NAME, tags=_run_tags())
+    모델 기록에도 내 PC 정보가 따로 적히므로 여기서도 덮어쓴다.
+    cloudpickle을 쓰는 이유: 기본값(skops)은 XGBoost/LightGBM 객체를 불러올 때 신뢰 목록을 따로 지정해야 한다."""
+    return mlflow.sklearn.log_model(
+        model, name=MODEL_ARTIFACT_NAME, input_example=input_example,
+        serialization_format="cloudpickle", tags=_run_tags(),
+    )
 
 
 def register_final_model(run_id: str) -> None:

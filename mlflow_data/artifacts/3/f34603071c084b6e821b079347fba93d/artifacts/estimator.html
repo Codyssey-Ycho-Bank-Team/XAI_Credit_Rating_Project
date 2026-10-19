@@ -1,0 +1,1997 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+  </head>
+  <body>
+    <style>.sk-global {
+  /* Definition of color scheme common for light and dark mode */
+  --sklearn-color-text: #000;
+  --sklearn-color-text-muted: #666;
+  --sklearn-color-line: gray;
+  /* Definition of color scheme for unfitted estimators */
+  --sklearn-color-unfitted-level-0: #fff5e6;
+  --sklearn-color-unfitted-level-1: #f6e4d2;
+  --sklearn-color-unfitted-level-2: #ffe0b3;
+  --sklearn-color-unfitted-level-3: chocolate;
+  /* Definition of color scheme for fitted estimators */
+  --sklearn-color-fitted-level-0: #f0f8ff;
+  --sklearn-color-fitted-level-1: #d4ebff;
+  --sklearn-color-fitted-level-2: #b3dbfd;
+  --sklearn-color-fitted-level-3: cornflowerblue;
+}
+
+.sk-global.light {
+  /* Specific color for light theme */
+  --sklearn-color-text-on-default-background: black;
+  --sklearn-color-background: white;
+  --sklearn-color-border-box: black;
+  --sklearn-color-icon: #696969;
+}
+
+.sk-global.dark {
+  --sklearn-color-text-on-default-background: white;
+  --sklearn-color-background: #111;
+  --sklearn-color-border-box: white;
+  --sklearn-color-icon: #878787;
+}
+
+.sk-global {
+  color: var(--sklearn-color-text);
+}
+
+.sk-global pre {
+  padding: 0;
+}
+
+.sk-global input.sk-hidden--visually {
+  border: 0;
+  clip-path: inset(100%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.sk-global div.sk-dashed-wrapped {
+  border: 1px dashed var(--sklearn-color-line);
+  margin: 0 0.4em 0.5em 0.4em;
+  box-sizing: border-box;
+  padding-bottom: 0.4em;
+  background-color: var(--sklearn-color-background);
+}
+
+.sk-global div.sk-container {
+  /* jupyter's `normalize.less` sets `[hidden] { display: none; }`
+     but bootstrap.min.css set `[hidden] { display: none !important; }`
+     so we also need the `!important` here to be able to override the
+     default hidden behavior on the sphinx rendered scikit-learn.org.
+     See: https://github.com/scikit-learn/scikit-learn/issues/21755 */
+  display: inline-block !important;
+  position: relative;
+}
+
+.sk-global div.sk-text-repr-fallback {
+  display: none;
+}
+
+div.sk-parallel-item,
+div.sk-serial,
+div.sk-item {
+  /* draw centered vertical line to link estimators */
+  background-image: linear-gradient(var(--sklearn-color-text-on-default-background), var(--sklearn-color-text-on-default-background));
+  background-size: 2px 100%;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+/* Parallel-specific style estimator block */
+
+.sk-global div.sk-parallel-item::after {
+  content: "";
+  width: 100%;
+  border-bottom: 2px solid var(--sklearn-color-text-on-default-background);
+  flex-grow: 1;
+}
+
+.sk-global div.sk-parallel {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background-color: var(--sklearn-color-background);
+  position: relative;
+}
+
+.sk-global div.sk-parallel-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.sk-global div.sk-parallel-item:first-child::after {
+  align-self: flex-end;
+  width: 50%;
+}
+
+.sk-global div.sk-parallel-item:last-child::after {
+  align-self: flex-start;
+  width: 50%;
+}
+
+.sk-global div.sk-parallel-item:only-child::after {
+  width: 0;
+}
+
+/* Serial-specific style estimator block */
+
+.sk-global div.sk-serial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--sklearn-color-background);
+  padding-right: 1em;
+  padding-left: 1em;
+}
+
+
+/* Toggleable style: style used for estimator/Pipeline/ColumnTransformer box that is
+clickable and can be expanded/collapsed.
+- Pipeline and ColumnTransformer use this feature and define the default style
+- Estimators will overwrite some part of the style using the `sk-estimator` class
+*/
+
+/* Pipeline and ColumnTransformer style (default) */
+
+.sk-global div.sk-toggleable {
+  /* Default theme specific background. It is overwritten whether we have a
+  specific estimator or a Pipeline/ColumnTransformer */
+  background-color: var(--sklearn-color-background);
+}
+
+/* Toggleable label */
+.sk-global label.sk-toggleable__label {
+  cursor: pointer;
+  display: flex;
+  width: 100%;
+  margin-bottom: 0;
+  padding: 0.5em;
+  box-sizing: border-box;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+}
+
+.sk-global label.sk-toggleable__label .caption {
+  font-size: 0.6rem;
+  font-weight: lighter;
+  color: var(--sklearn-color-text-muted);
+}
+
+.sk-global label.sk-toggleable__label-arrow:before {
+  /* Arrow on the left of the label */
+  content: "▸";
+  float: left;
+  margin-right: 0.25em;
+  color: var(--sklearn-color-icon);
+}
+
+.sk-global label.sk-toggleable__label-arrow:hover:before {
+  color: var(--sklearn-color-text);
+}
+
+/* Toggleable content - dropdown */
+
+.sk-global div.sk-toggleable__content {
+  display: none;
+  text-align: left;
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-0);
+}
+
+.sk-global div.sk-toggleable__content.fitted {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+.sk-global div.sk-toggleable__content pre {
+  margin: 0.2em;
+  border-radius: 0.25em;
+  color: var(--sklearn-color-text);
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-0);
+}
+
+.sk-global div.sk-toggleable__content.fitted pre {
+  /* unfitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+.sk-global input.sk-toggleable__control:checked~div.sk-toggleable__content {
+  /* Expand drop-down */
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.sk-global input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {
+  content: "▾";
+}
+
+/* Pipeline/ColumnTransformer-specific style */
+
+.sk-global div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {
+  color: var(--sklearn-color-text);
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+.sk-global div.sk-label.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+/* Estimator-specific style */
+
+/* Colorize estimator box */
+.sk-global div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+.sk-global div.sk-estimator.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+.sk-global div.sk-label label.sk-toggleable__label,
+.sk-global div.sk-label label {
+  /* The background is the default theme color */
+  color: var(--sklearn-color-text-on-default-background);
+}
+
+/* On hover, darken the color of the background */
+.sk-global div.sk-label:hover label.sk-toggleable__label {
+  color: var(--sklearn-color-text);
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+/* Label box, darken color on hover, fitted */
+.sk-global div.sk-label.fitted:hover label.sk-toggleable__label.fitted {
+  color: var(--sklearn-color-text);
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+/* Estimator label */
+
+.sk-global div.sk-label label {
+  font-family: monospace;
+  font-weight: bold;
+  line-height: 1.2em;
+}
+
+.sk-global div.sk-label-container {
+  text-align: center;
+}
+
+/* Estimator-specific */
+.sk-global div.sk-estimator {
+  font-family: monospace;
+  border: 1px dotted var(--sklearn-color-border-box);
+  border-radius: 0.25em;
+  box-sizing: border-box;
+  margin-bottom: 0.5em;
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-0);
+}
+
+.sk-global div.sk-estimator.fitted {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+/* on hover */
+.sk-global div.sk-estimator:hover {
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+.sk-global div.sk-estimator.fitted:hover {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+/* Specification for estimator info (e.g. "i" and "?") */
+
+/* Common style for "i" and "?" */
+
+.sk-estimator-doc-link,
+a:link.sk-estimator-doc-link,
+a:visited.sk-estimator-doc-link {
+  float: right;
+  font-size: smaller;
+  line-height: 1em;
+  font-family: monospace;
+  background-color: var(--sklearn-color-unfitted-level-0);
+  border-radius: 1em;
+  height: 1em;
+  width: 1em;
+  text-decoration: none !important;
+  margin-left: 0.5em;
+  text-align: center;
+  /* unfitted */
+  border: var(--sklearn-color-unfitted-level-3) 1pt solid;
+  color: var(--sklearn-color-unfitted-level-3);
+}
+
+.sk-estimator-doc-link.fitted,
+a:link.sk-estimator-doc-link.fitted,
+a:visited.sk-estimator-doc-link.fitted {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+  border: var(--sklearn-color-fitted-level-3) 1pt solid;
+  color: var(--sklearn-color-fitted-level-3);
+}
+
+/* On hover */
+div.sk-estimator:hover .sk-estimator-doc-link:hover,
+.sk-estimator-doc-link:hover,
+div.sk-label-container:hover .sk-estimator-doc-link:hover,
+.sk-estimator-doc-link:hover {
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-3);
+  border: var(--sklearn-color-fitted-level-0) 1pt solid;
+  color: var(--sklearn-color-unfitted-level-0);
+  text-decoration: none;
+}
+
+div.sk-estimator.fitted:hover .sk-estimator-doc-link.fitted:hover,
+.sk-estimator-doc-link.fitted:hover,
+div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
+.sk-estimator-doc-link.fitted:hover {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-3);
+  border: var(--sklearn-color-fitted-level-0) 1pt solid;
+  color: var(--sklearn-color-fitted-level-0);
+  text-decoration: none;
+}
+
+/* Span, style for the box shown on hovering the info icon */
+.sk-estimator-doc-link span {
+  display: none;
+  z-index: 9999;
+  position: relative;
+  font-weight: normal;
+  right: .2ex;
+  padding: .5ex;
+  margin: .5ex;
+  width: min-content;
+  min-width: 20ex;
+  max-width: 50ex;
+  color: var(--sklearn-color-text);
+  box-shadow: 2pt 2pt 4pt #999;
+  /* unfitted */
+  background: var(--sklearn-color-unfitted-level-0);
+  border: .5pt solid var(--sklearn-color-unfitted-level-3);
+}
+
+.sk-estimator-doc-link.fitted span {
+  /* fitted */
+  background: var(--sklearn-color-fitted-level-0);
+  border: var(--sklearn-color-fitted-level-3);
+}
+
+.sk-estimator-doc-link:hover span {
+  display: block;
+}
+
+/* "?"-specific style due to the `<a>` HTML tag */
+
+.sk-global a.estimator_doc_link {
+  float: right;
+  font-size: 1rem;
+  line-height: 1em;
+  font-family: monospace;
+  background-color: var(--sklearn-color-unfitted-level-0);
+  border-radius: 1rem;
+  height: 1rem;
+  width: 1rem;
+  text-decoration: none;
+  /* unfitted */
+  color: var(--sklearn-color-unfitted-level-1);
+  border: var(--sklearn-color-unfitted-level-1) 1pt solid;
+}
+
+.sk-global a.estimator_doc_link.fitted {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-0);
+  border: var(--sklearn-color-fitted-level-1) 1pt solid;
+  color: var(--sklearn-color-fitted-level-1);
+}
+
+/* On hover */
+.sk-global a.estimator_doc_link:hover {
+  /* unfitted */
+  background-color: var(--sklearn-color-unfitted-level-3);
+  color: var(--sklearn-color-background);
+  text-decoration: none;
+}
+
+.sk-global a.estimator_doc_link.fitted:hover {
+  /* fitted */
+  background-color: var(--sklearn-color-fitted-level-3);
+}
+
+.sk-top-container.sk-global {
+  /* pydata-sphinx-theme hides overflow, so scrolling is disabled.
+   We need to set it to !important and add tabindex="0" in the HTML
+   to allow keyboard-only users to navigate the display. */
+  overflow-x: scroll !important;
+  max-width: 100%;
+}
+
+.estimator-table {
+    font-family: monospace;
+}
+
+.estimator-table summary {
+    padding: .5rem;
+    cursor: pointer;
+}
+
+.estimator-table summary::marker {
+    font-size: 0.7rem;
+}
+
+.estimator-table details[open] {
+    padding-left: 0.1rem;
+    padding-right: 0.1rem;
+    padding-bottom: 0.3rem;
+}
+
+.estimator-table .parameters-table {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-top: 0;
+}
+
+.estimator-table .parameters-table tr:nth-child(odd) {
+    background-color: #fff;
+}
+
+.estimator-table .parameters-table tr:nth-child(even) {
+    background-color: #f6f6f6;
+}
+
+.estimator-table .parameters-table tr:hover td {
+    background-color: #e0e0e0;
+}
+
+.estimator-table table :is(td, th) {
+    border: 1px solid rgba(106, 105, 104, 0.232);
+}
+
+/*
+    `table td`is set in notebook with right text-align.
+    We need to overwrite it.
+*/
+.estimator-table table td.param {
+    text-align: left;
+    position: relative;
+    padding: 0;
+}
+
+.user-set td {
+    color:rgb(255, 94, 0);
+    text-align: left !important;
+}
+
+.user-set td.value {
+    color:rgb(255, 94, 0);
+    background-color: transparent;
+}
+
+.default td, .estimator-table th {
+    color: black;
+    text-align: left !important;
+}
+
+.user-set td i,
+.default td i {
+    color: black;
+}
+
+td.fitted-att-type {
+    white-space: preserve nowrap;
+}
+
+/*
+    Styles for parameter documentation links
+    We need styling for visited so jupyter doesn't overwrite it
+*/
+a.param-doc-link,
+a.param-doc-link:link,
+a.param-doc-link:visited {
+    text-decoration: underline dashed;
+    text-underline-offset: .3em;
+    color: inherit;
+    display: block;
+    padding: .5em;
+}
+
+@supports(anchor-name: --doc-link) {
+    a.param-doc-link,
+    a.param-doc-link:link,
+    a.param-doc-link:visited {
+    anchor-name: --doc-link;
+    }
+}
+
+/* "hack" to make the entire area of the cell containing the link clickable */
+a.param-doc-link::before {
+    position: absolute;
+    content: "";
+    inset: 0;
+}
+
+.param-doc-description {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    left: 0;
+    padding: .5ex;
+    margin-left: 1.5em;
+    color: var(--sklearn-color-text);
+    box-shadow: .3em .3em .4em #999;
+    width: max-content;
+    text-align: left;
+    max-height: 10em;
+    overflow-y: auto;
+
+    /* unfitted */
+    background: var(--sklearn-color-unfitted-level-0);
+    border: thin solid var(--sklearn-color-unfitted-level-3);
+}
+
+@supports(position-area: center right) {
+    .param-doc-description {
+    position-area: center right;
+    position: fixed;
+    margin-left: 0;
+    }
+}
+
+/* Fitted state for parameter tooltips */
+.fitted .param-doc-description {
+    /* fitted */
+    background: var(--sklearn-color-fitted-level-0);
+    border: thin solid var(--sklearn-color-fitted-level-3);
+}
+
+.param-doc-link:hover .param-doc-description {
+    display: block;
+}
+
+.copy-paste-icon {
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NDggNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNy4yIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjUgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZD0iTTIwOCAwTDMzMi4xIDBjMTIuNyAwIDI0LjkgNS4xIDMzLjkgMTQuMWw2Ny45IDY3LjljOSA5IDE0LjEgMjEuMiAxNC4xIDMzLjlMNDQ4IDMzNmMwIDI2LjUtMjEuNSA0OC00OCA0OGwtMTkyIDBjLTI2LjUgMC00OC0yMS41LTQ4LTQ4bDAtMjg4YzAtMjYuNSAyMS41LTQ4IDQ4LTQ4ek00OCAxMjhsODAgMCAwIDY0LTY0IDAgMCAyNTYgMTkyIDAgMC0zMiA2NCAwIDAgNDhjMCAyNi41LTIxLjUgNDgtNDggNDhMNDggNTEyYy0yNi41IDAtNDgtMjEuNS00OC00OEwwIDE3NmMwLTI2LjUgMjEuNS00OCA0OC00OHoiLz48L3N2Zz4=);
+    background-repeat: no-repeat;
+    background-size: 14px 14px;
+    background-position: 0;
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    background-color: transparent;
+}
+
+.copy-paste-icon:focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 1px;
+}
+
+.features {
+  font-family: monospace;
+  cursor: pointer;
+  background-color: var(--sklearn-color-unfitted-level-0);
+  border: 1px dotted var(--sklearn-color-border-box);
+  border-radius: .20em;
+  margin-bottom: 0.5em;
+  font-size: inherit; /* Needed for jupyter */
+}
+
+.features.fitted {
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+.features summary {
+  cursor: pointer;
+  display: flex;
+  margin-bottom: 0;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: .25em;
+}
+
+.features details[open] > summary {
+  color: var(--sklearn-color-text);
+  background-color: var(--sklearn-color-unfitted-level-2);
+  border-radius: .20em 0 0 0;
+}
+
+.features.fitted details[open] > summary {
+  background-color: var(--sklearn-color-fitted-level-2);
+  border-radius: .20em 0 0 0;
+}
+
+.features details > summary .arrow::before {
+  content: "▸";
+  color: grey;
+}
+
+.features details[open] > summary .arrow::before {
+  content: "▾";
+}
+
+.features details:hover > summary {
+  margin: 0;
+  background-color: var(--sklearn-color-unfitted-level-2);
+}
+
+.features.fitted details:hover > summary {
+  margin: 0;
+  background-color: var(--sklearn-color-fitted-level-2);
+}
+
+.features .features-container {
+  max-height: 10em;
+  overflow: auto;
+  scrollbar-width: thin;
+  padding: .25em 0.1rem;
+  background-color: var(--sklearn-color-unfitted-level-0);
+  border-radius: 0 0 .5em .5em;
+}
+
+.features.fitted .features-container {
+  background-color: var(--sklearn-color-fitted-level-0);
+}
+
+.features .image-container {
+  block-size: 1em;
+  inline-size: 1em;
+  padding: 0;
+  margin: 0%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.features .copy-paste-icon {
+  background-size: 1em 1em;
+  width: 1em;
+  height: 1em;
+  filter: grayscale(100%) opacity(60%);
+}
+
+.features .features-container table {
+  width: 100%;
+  margin: 0.01em;
+}
+
+.features .features-container table tr:nth-child(odd) {
+  background-color: #fff;
+}
+
+.features .features-container table tr:nth-child(even) {
+  background-color: #f6f6f6;
+}
+
+.features .features-container table tr:hover {
+  background-color: #e0e0e0;
+}
+
+.features .features-container table {
+  table-layout: inherit;
+}
+
+.features .features-container table td {
+  text-align: left;
+  padding: 0 0.5em;
+  border: 1px solid rgba(106, 105, 104, 0.232);
+  white-space: nowrap;
+  color: var(--sklearn-color-text);
+}
+
+.total_features {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5em;
+}
+</style><body><div id="sk-container-id-6" tabindex="0" class="sk-top-container sk-global"><div class="sk-text-repr-fallback"><pre>RandomizedSearchCV(cv=StratifiedKFold(n_splits=5, random_state=42, shuffle=True),
+                   estimator=Pipeline(steps=[(&#x27;smote&#x27;, SMOTE(random_state=42)),
+                                             (&#x27;clf&#x27;,
+                                              LGBMClassifier(n_jobs=1,
+                                                             random_state=42,
+                                                             verbose=-1))]),
+                   n_iter=30, n_jobs=-1,
+                   param_distributions={&#x27;clf__learning_rate&#x27;: &lt;scipy.stats._distn_infrastructure.rv_continuous_frozen object at 0x000001DA19E8E780&gt;,
+                                        &#x27;clf_...9E8B770&gt;,
+                                        &#x27;clf__min_child_samples&#x27;: &lt;scipy.stats._distn_infrastructure.rv_discrete_frozen object at 0x000001DA19E7FAC0&gt;,
+                                        &#x27;clf__n_estimators&#x27;: &lt;scipy.stats._distn_infrastructure.rv_discrete_frozen object at 0x000001DA19E8F360&gt;,
+                                        &#x27;clf__num_leaves&#x27;: &lt;scipy.stats._distn_infrastructure.rv_discrete_frozen object at 0x000001DA19E8EB10&gt;},
+                   random_state=42, scoring=&#x27;roc_auc&#x27;)</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label fitted sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually sk-global" id="sk-estimator-id-18" type="checkbox" ><label for="sk-estimator-id-18" class="sk-toggleable__label fitted sk-toggleable__label-arrow"><div><div>RandomizedSearchCV</div></div><div><a class="sk-estimator-doc-link fitted" rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html">?<span>Documentation for RandomizedSearchCV</span></a><span class="sk-estimator-doc-link fitted">i<span>Fitted</span></span></div></label><div class="sk-toggleable__content fitted" data-param-prefix="">
+        <div class="estimator-table">
+            <details>
+                <summary>Parameters</summary>
+                <table class="parameters-table">
+                  <tbody>
+                    
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy estimator to clipboard"
+                 onclick="copyToClipboard('estimator',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-estimator;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=estimator,-estimator%20object">
+            estimator
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-estimator;">
+            estimator: estimator object<br><br>An object of that type is instantiated for each grid point.<br>This is assumed to implement the scikit-learn estimator interface.<br>Either estimator needs to provide a ``score`` function,<br>or ``scoring`` must be passed.</span>
+        </a>
+    </td>
+            <td class="value">Pipeline(step...verbose=-1))])</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy param_distributions to clipboard"
+                 onclick="copyToClipboard('param_distributions',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-param_distributions;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=param_distributions,-dict%20or%20list%20of%20dicts">
+            param_distributions
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-param_distributions;">
+            param_distributions: dict or list of dicts<br><br>Dictionary with parameters names (`str`) as keys and distributions<br>or lists of parameters to try. Distributions must provide a ``rvs``<br>method for sampling (such as those from scipy.stats.distributions).<br>If a list is given, it is sampled uniformly.<br>If a list of dicts is given, first a dict is sampled uniformly, and<br>then a parameter is sampled using that dict as above.</span>
+        </a>
+    </td>
+            <td class="value">{&#x27;clf__learning_rate&#x27;: &lt;scipy.stats....001DA19E8E780&gt;, &#x27;clf__max_depth&#x27;: &lt;scipy.stats....001DA19E8B770&gt;, &#x27;clf__min_child_samples&#x27;: &lt;scipy.stats....001DA19E7FAC0&gt;, &#x27;clf__n_estimators&#x27;: &lt;scipy.stats....001DA19E8F360&gt;, ...}</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy n_iter to clipboard"
+                 onclick="copyToClipboard('n_iter',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-n_iter;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=n_iter,-int%2C%20default%3D10">
+            n_iter
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-n_iter;">
+            n_iter: int, default=10<br><br>Number of parameter settings that are sampled. n_iter trades<br>off runtime vs quality of the solution.</span>
+        </a>
+    </td>
+            <td class="value">30</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy scoring to clipboard"
+                 onclick="copyToClipboard('scoring',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-scoring;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=scoring,-str%2C%20callable%2C%20list%2C%20tuple%20or%20dict%2C%20default%3DNone">
+            scoring
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-scoring;">
+            scoring: str, callable, list, tuple or dict, default=None<br><br>Strategy to evaluate the performance of the cross-validated model on<br>the test set.<br><br>If `scoring` represents a single score, one can use:<br><br>- a single string (see :ref:`scoring_string_names`);<br>- a callable (see :ref:`scoring_callable`) that returns a single value;<br>- `None`, the `estimator`&#x27;s<br>  :ref:`default evaluation criterion &lt;scoring_api_overview&gt;` is used.<br><br>If `scoring` represents multiple scores, one can use:<br><br>- a list or tuple of unique strings;<br>- a callable returning a dictionary where the keys are the metric<br>  names and the values are the metric scores;<br>- a dictionary with metric names as keys and callables as values.<br><br>See :ref:`multimetric_grid_search` for an example.<br><br>If None, the estimator&#x27;s score method is used.</span>
+        </a>
+    </td>
+            <td class="value">&#x27;roc_auc&#x27;</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy n_jobs to clipboard"
+                 onclick="copyToClipboard('n_jobs',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-n_jobs;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=n_jobs,-int%2C%20default%3DNone">
+            n_jobs
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-n_jobs;">
+            n_jobs: int, default=None<br><br>Number of jobs to run in parallel.<br>``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.<br>``-1`` means using all processors. See :term:`Glossary &lt;n_jobs&gt;`<br>for more details.<br><br>.. versionchanged:: v0.20<br>   `n_jobs` default changed from 1 to None</span>
+        </a>
+    </td>
+            <td class="value">-1</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy cv to clipboard"
+                 onclick="copyToClipboard('cv',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-cv;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=cv,-int%2C%20cross-validation%20generator%20or%20an%20iterable%2C%20default%3DNone">
+            cv
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-cv;">
+            cv: int, cross-validation generator or an iterable, default=None<br><br>Determines the cross-validation splitting strategy.<br>Possible inputs for cv are:<br><br>- None, to use the default 5-fold cross validation,<br>- integer, to specify the number of folds in a `(Stratified)KFold`,<br>- :term:`CV splitter`,<br>- an iterable yielding (train, test) splits as arrays of indices.<br><br>For integer/None inputs, if the estimator is a classifier and ``y`` is<br>either binary or multiclass, :class:`StratifiedKFold` is used. In all<br>other cases, :class:`KFold` is used. These splitters are instantiated<br>with `shuffle=False` so the splits will be the same across calls.<br><br>Refer :ref:`User Guide &lt;cross_validation&gt;` for the various<br>cross-validation strategies that can be used here.<br><br>.. versionchanged:: 0.22<br>    ``cv`` default value if None changed from 3-fold to 5-fold.</span>
+        </a>
+    </td>
+            <td class="value">StratifiedKFo... shuffle=True)</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy random_state to clipboard"
+                 onclick="copyToClipboard('random_state',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-random_state;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=random_state,-int%2C%20RandomState%20instance%20or%20None%2C%20default%3DNone">
+            random_state
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-random_state;">
+            random_state: int, RandomState instance or None, default=None<br><br>Pseudo random number generator state used for random uniform sampling<br>from lists of possible values instead of scipy.stats distributions.<br>Pass an int for reproducible output across multiple<br>function calls.<br>See :term:`Glossary &lt;random_state&gt;`.</span>
+        </a>
+    </td>
+            <td class="value">42</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy refit to clipboard"
+                 onclick="copyToClipboard('refit',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-refit;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=refit,-bool%2C%20str%2C%20or%20callable%2C%20default%3DTrue">
+            refit
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-refit;">
+            refit: bool, str, or callable, default=True<br><br>Refit an estimator using the best found parameters on the whole<br>dataset.<br><br>For multiple metric evaluation, this needs to be a `str` denoting the<br>scorer that would be used to find the best parameters for refitting<br>the estimator at the end.<br><br>Where there are considerations other than maximum score in<br>choosing a best estimator, ``refit`` can be set to a function which<br>returns the selected ``best_index_`` given the ``cv_results_``. In that<br>case, the ``best_estimator_`` and ``best_params_`` will be set<br>according to the returned ``best_index_`` while the ``best_score_``<br>attribute will not be available.<br><br>The refitted estimator is made available at the ``best_estimator_``<br>attribute and permits using ``predict`` directly on this<br>``RandomizedSearchCV`` instance.<br><br>Also for multiple metric evaluation, the attributes ``best_index_``,<br>``best_score_`` and ``best_params_`` will only be available if<br>``refit`` is set and all of them will be determined w.r.t this specific<br>scorer.<br><br>See ``scoring`` parameter to know more about multiple metric<br>evaluation.<br><br>See :ref:`this example<br>&lt;sphx_glr_auto_examples_model_selection_plot_grid_search_refit_callable.py&gt;`<br>for an example of how to use ``refit=callable`` to balance model<br>complexity and cross-validated score.<br><br>.. versionchanged:: 0.20<br>    Support for callable added.</span>
+        </a>
+    </td>
+            <td class="value">True</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy verbose to clipboard"
+                 onclick="copyToClipboard('verbose',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-verbose;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=verbose,-int%2C%20default%20%3D%200">
+            verbose
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-verbose;">
+            verbose: int, default = 0<br><br>Controls the verbosity of information printed during fitting, with higher<br>values yielding more detailed logging.<br><br>- 0 : no messages are printed;<br>- &gt;=1 : summary of the total number of fits;<br>- &gt;=2 : computation time for each fold and parameter candidate;<br>- &gt;=3 : fold indices and scores;<br>- &gt;=10 : parameter candidate indices and START messages before each fit.</span>
+        </a>
+    </td>
+            <td class="value">0</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy pre_dispatch to clipboard"
+                 onclick="copyToClipboard('pre_dispatch',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-pre_dispatch;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=pre_dispatch,-int%2C%20or%20str%2C%20default%3D%272%2An_jobs%27">
+            pre_dispatch
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-pre_dispatch;">
+            pre_dispatch: int, or str, default=&#x27;2*n_jobs&#x27;<br><br>Controls the number of jobs that get dispatched during parallel<br>execution. Reducing this number can be useful to avoid an<br>explosion of memory consumption when more jobs get dispatched<br>than CPUs can process. This parameter can be:<br><br>- None, in which case all the jobs are immediately created and spawned. Use<br>  this for lightweight and fast-running jobs, to avoid delays due to on-demand<br>  spawning of the jobs<br>- An int, giving the exact number of total jobs that are spawned<br>- A str, giving an expression as a function of n_jobs, as in &#x27;2*n_jobs&#x27;</span>
+        </a>
+    </td>
+            <td class="value">&#x27;2*n_jobs&#x27;</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy error_score to clipboard"
+                 onclick="copyToClipboard('error_score',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-error_score;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=error_score,-%27raise%27%20or%20numeric%2C%20default%3Dnp.nan">
+            error_score
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-error_score;">
+            error_score: &#x27;raise&#x27; or numeric, default=np.nan<br><br>Value to assign to the score if an error occurs in estimator fitting.<br>If set to &#x27;raise&#x27;, the error is raised. If a numeric value is given,<br>FitFailedWarning is raised. This parameter does not affect the refit<br>step, which will always raise the error.</span>
+        </a>
+    </td>
+            <td class="value">nan</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy return_train_score to clipboard"
+                 onclick="copyToClipboard('return_train_score',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-return_train_score;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=return_train_score,-bool%2C%20default%3DFalse">
+            return_train_score
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-return_train_score;">
+            return_train_score: bool, default=False<br><br>If ``False``, the ``cv_results_`` attribute will not include training<br>scores.<br>Computing training scores is used to get insights on how different<br>parameter settings impact the overfitting/underfitting trade-off.<br>However computing the scores on the training set can be computationally<br>expensive and is not strictly required to select the parameters that<br>yield the best generalization performance.<br><br>.. versionadded:: 0.19<br><br>.. versionchanged:: 0.21<br>    Default value was changed from ``True`` to ``False``</span>
+        </a>
+    </td>
+            <td class="value">False</td>
+        </tr>
+    
+                  </tbody>
+                </table>
+            </details>
+        </div>
+    
+        <div class="estimator-table">
+            <details>
+                <summary>Fitted attributes</summary>
+                <table class="parameters-table">
+                    <tbody>
+                        <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Value</th>
+                        </tr>
+                        
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-best_estimator_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=best_estimator_,-estimator">
+            best_estimator_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-best_estimator_;">
+            best_estimator_: estimator<br><br>Estimator that was chosen by the search, i.e. estimator<br>which gave highest score (or smallest loss if specified)<br>on the left out data. Not available if ``refit=False``.<br><br>For multi-metric evaluation, this attribute is present only if<br>``refit`` is specified.<br><br>See ``refit`` parameter for more information on allowed values.</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">Pipeline</td>
+           <td>Pipeline(step...verbose=-1))])</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-best_index_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=best_index_,-int">
+            best_index_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-best_index_;">
+            best_index_: int<br><br>The index (of the ``cv_results_`` arrays) which corresponds to the best<br>candidate parameter setting.<br><br>The dict at ``search.cv_results_[&#x27;params&#x27;][search.best_index_]`` gives<br>the parameter setting for the best model, that gives the highest<br>mean score (``search.best_score_``).<br><br>For multi-metric evaluation, this is not available if ``refit`` is<br>``False``. See ``refit`` parameter for more information.</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">int64</td>
+           <td>np.int64(1)</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-best_params_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=best_params_,-dict">
+            best_params_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-best_params_;">
+            best_params_: dict<br><br>Parameter setting that gave the best results on the hold out data.<br><br>For multi-metric evaluation, this is not available if ``refit`` is<br>``False``. See ``refit`` parameter for more information.</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">dict</td>
+           <td>{&#x27;cl...te&#x27;: np.float64(0....5234005420548), &#x27;cl...th&#x27;: 10, &#x27;cl...es&#x27;: 45, &#x27;cl...rs&#x27;: 459, ...}</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-best_score_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=best_score_,-float">
+            best_score_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-best_score_;">
+            best_score_: float<br><br>Mean cross-validated score of the best_estimator.<br><br>For multi-metric evaluation, this is not available if ``refit`` is<br>``False``. See ``refit`` parameter for more information.<br><br>This attribute is not available if ``refit`` is a function.</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">float64</td>
+           <td>0.8494</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-classes_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=classes_,-ndarray%20of%20shape%20%28n_classes%2C%29">
+            classes_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-classes_;">
+            classes_: ndarray of shape (n_classes,)<br><br>The classes labels. This is present only if ``refit`` is specified and<br>the underlying estimator is a classifier.</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">ndarray[int64](2,)</td>
+           <td>[0,1]</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-cv_results_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=cv_results_,-dict%20of%20numpy%20%28masked%29%20ndarrays">
+            cv_results_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-cv_results_;">
+            cv_results_: dict of numpy (masked) ndarrays<br><br>A dict with keys as column headers and values as columns, that can be<br>imported into a pandas ``DataFrame``.<br><br>For instance the below given table<br><br>+--------------+-------------+-------------------+---+---------------+<br>| param_kernel | param_gamma | split0_test_score |...|rank_test_score|<br>+==============+=============+===================+===+===============+<br>|    &#x27;rbf&#x27;     |     0.1     |       0.80        |...|       1       |<br>+--------------+-------------+-------------------+---+---------------+<br>|    &#x27;rbf&#x27;     |     0.2     |       0.84        |...|       3       |<br>+--------------+-------------+-------------------+---+---------------+<br>|    &#x27;rbf&#x27;     |     0.3     |       0.70        |...|       2       |<br>+--------------+-------------+-------------------+---+---------------+<br><br>will be represented by a ``cv_results_`` dict of::<br><br>    {<br>    &#x27;param_kernel&#x27; : masked_array(data = [&#x27;rbf&#x27;, &#x27;rbf&#x27;, &#x27;rbf&#x27;],<br>                                  mask = False),<br>    &#x27;param_gamma&#x27;  : masked_array(data = [0.1 0.2 0.3], mask = False),<br>    &#x27;split0_test_score&#x27;  : [0.80, 0.84, 0.70],<br>    &#x27;split1_test_score&#x27;  : [0.82, 0.50, 0.70],<br>    &#x27;mean_test_score&#x27;    : [0.81, 0.67, 0.70],<br>    &#x27;std_test_score&#x27;     : [0.01, 0.24, 0.00],<br>    &#x27;rank_test_score&#x27;    : [1, 3, 2],<br>    &#x27;split0_train_score&#x27; : [0.80, 0.92, 0.70],<br>    &#x27;split1_train_score&#x27; : [0.82, 0.55, 0.70],<br>    &#x27;mean_train_score&#x27;   : [0.81, 0.74, 0.70],<br>    &#x27;std_train_score&#x27;    : [0.01, 0.19, 0.00],<br>    &#x27;mean_fit_time&#x27;      : [0.73, 0.63, 0.43],<br>    &#x27;std_fit_time&#x27;       : [0.01, 0.02, 0.01],<br>    &#x27;mean_score_time&#x27;    : [0.01, 0.06, 0.04],<br>    &#x27;std_score_time&#x27;     : [0.00, 0.00, 0.00],<br>    &#x27;params&#x27;             : [{&#x27;kernel&#x27; : &#x27;rbf&#x27;, &#x27;gamma&#x27; : 0.1}, ...],<br>    }<br><br>For an example of analysing ``cv_results_``,<br>see :ref:`sphx_glr_auto_examples_model_selection_plot_grid_search_stats.py`.<br><br>NOTE<br><br>The key ``&#x27;params&#x27;`` is used to store a list of parameter<br>settings dicts for all the parameter candidates.<br><br>The ``mean_fit_time``, ``std_fit_time``, ``mean_score_time`` and<br>``std_score_time`` are all in seconds.<br><br>For multi-metric evaluation, the scores for all the scorers are<br>available in the ``cv_results_`` dict at the keys ending with that<br>scorer&#x27;s name (``&#x27;_&lt;scorer_name&gt;&#x27;``) instead of ``&#x27;_score&#x27;`` shown<br>above. (&#x27;split0_test_precision&#x27;, &#x27;mean_train_precision&#x27; etc.)</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">dict</td>
+           <td>{&#x27;me...me&#x27;: array([13.265... 13.56533394]), &#x27;me...me&#x27;: array([1.7062..., 0.60287042]), &#x27;me...re&#x27;: array([0.8450..., 0.84618385]), &#x27;pa...te&#x27;: masked_array(...l_value=1e+20), ...}</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-feature_names_in_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=feature_names_in_,-ndarray%20of%20shape%20%28n_features_in_%2C%29">
+            feature_names_in_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-feature_names_in_;">
+            feature_names_in_: ndarray of shape (`n_features_in_`,)<br><br>Names of features seen during :term:`fit`. Only defined if<br>`best_estimator_` is defined (see the documentation for the `refit`<br>parameter for more details) and that `best_estimator_` exposes<br>`feature_names_in_` when fit.<br><br>.. versionadded:: 1.0</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">ndarray[object](22,)</td>
+           <td>[&#x27;RevolvingUtilizationOfUnsecuredLines&#x27;,&#x27;age&#x27;,
+ &#x27;NumberOfTime30-59DaysPastDueNotWorse&#x27;,...,&#x27;is_dependents_missing&#x27;,
+ &#x27;is_late_unknown&#x27;,&#x27;is_thin_filer&#x27;]</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-multimetric_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=multimetric_,-bool">
+            multimetric_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-multimetric_;">
+            multimetric_: bool<br><br>Whether or not the scorers compute several metrics.</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">bool</td>
+           <td>False</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-n_features_in_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=n_features_in_,-int">
+            n_features_in_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-n_features_in_;">
+            n_features_in_: int<br><br>Number of features seen during :term:`fit`. Only defined if<br>`best_estimator_` is defined (see the documentation for the `refit`<br>parameter for more details) and that `best_estimator_` exposes<br>`n_features_in_` when fit.<br><br>.. versionadded:: 0.24</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">int</td>
+           <td>22</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-n_splits_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=n_splits_,-int">
+            n_splits_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-n_splits_;">
+            n_splits_: int<br><br>The number of cross-validation splits (folds/iterations).</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">int</td>
+           <td>5</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-refit_time_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=refit_time_,-float">
+            refit_time_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-refit_time_;">
+            refit_time_: float<br><br>Seconds used for refitting the best model on the whole dataset.<br><br>This is present only if ``refit`` is not False.<br><br>.. versionadded:: 0.20</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">float</td>
+           <td>5.857</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param">
+        <a class="param-doc-link"
+            style="anchor-name: --doc-link-scorer_;"
+            rel="noreferrer" target="_blank" href="https://scikit-learn.org/1.9/modules/generated/sklearn.model_selection.RandomizedSearchCV.html#:~:text=scorer_,-function%20or%20a%20dict">
+            scorer_
+            <span class="param-doc-description"
+            style="position-anchor: --doc-link-scorer_;">
+            scorer_: function or a dict<br><br>Scorer function used on the held out data to choose the best<br>parameters for the model.<br><br>For multi-metric evaluation, this attribute holds the validated<br>``scoring`` dict which maps the scorer key to the scorer callable.</span>
+        </a>
+    </td>
+           <td class="fitted-att-type">_Scorer</td>
+           <td>make_scorer(r...edict_proba&#x27;))</td>
+
+
+       </tr>
+    
+                    </tbody>
+                </table>
+            </details>
+        </div>
+    </div></div></div><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label fitted sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually sk-global" id="sk-estimator-id-19" type="checkbox" ><label for="sk-estimator-id-19" class="sk-toggleable__label fitted sk-toggleable__label-arrow"><div><div>best_estimator_: Pipeline</div></div></label><div class="sk-toggleable__content fitted" data-param-prefix="best_estimator___"></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-serial"><div class="sk-item"><div class="sk-estimator fitted sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually sk-global" id="sk-estimator-id-20" type="checkbox" ><label for="sk-estimator-id-20" class="sk-toggleable__label fitted sk-toggleable__label-arrow"><div><div>SMOTE</div></div></label><div class="sk-toggleable__content fitted" data-param-prefix="best_estimator___smote__">
+        <div class="estimator-table">
+            <details>
+                <summary>Parameters</summary>
+                <table class="parameters-table">
+                  <tbody>
+                    
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy random_state to clipboard"
+                 onclick="copyToClipboard('random_state',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">random_state</td>
+            <td class="value">42</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy sampling_strategy to clipboard"
+                 onclick="copyToClipboard('sampling_strategy',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">sampling_strategy</td>
+            <td class="value">&#x27;auto&#x27;</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy k_neighbors to clipboard"
+                 onclick="copyToClipboard('k_neighbors',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">k_neighbors</td>
+            <td class="value">5</td>
+        </tr>
+    
+                  </tbody>
+                </table>
+            </details>
+        </div>
+    
+        <div class="estimator-table">
+            <details>
+                <summary>Fitted attributes</summary>
+                <table class="parameters-table">
+                    <tbody>
+                        <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Value</th>
+                        </tr>
+                        
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">feature_names_in_</a></td>
+           <td class="fitted-att-type">ndarray[object](22,)</td>
+           <td>[&#x27;RevolvingUtilizationOfUnsecuredLines&#x27;,&#x27;age&#x27;,
+ &#x27;NumberOfTime30-59DaysPastDueNotWorse&#x27;,...,&#x27;is_dependents_missing&#x27;,
+ &#x27;is_late_unknown&#x27;,&#x27;is_thin_filer&#x27;]</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">n_features_in_</a></td>
+           <td class="fitted-att-type">int</td>
+           <td>22</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">nn_k_</a></td>
+           <td class="fitted-att-type">NearestNeighbors</td>
+           <td>NearestNeighb...n_neighbors=6)</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">sampling_strategy_</a></td>
+           <td class="fitted-att-type">OrderedDict</td>
+           <td>OrderedDict({...int64(90963)})</td>
+
+
+       </tr>
+    
+                    </tbody>
+                </table>
+            </details>
+        </div>
+    </div></div></div>
+        <div class="features fitted">
+          <details>
+            <summary>
+              <div class="arrow"></div>
+              <div>22 features</div>
+              <div class="image-container">
+                <button type="button" class="copy-paste-icon"
+                  title="Copy output features (max 100)"
+                  aria-label="Copy output features (max 100)"
+                  onclick="
+                  event.stopPropagation();
+                  event.preventDefault();
+                  copyFeatureNamesToClipboard(this);
+                  "
+                >
+                </button>
+              </div>
+            </summary>
+            <div class="features-container">
+                <table class="features-table">
+                  <tbody>
+                    
+        <tr>
+          <td>RevolvingUtilizationOfUnsecuredLines</td>
+        </tr>
+
+    
+        <tr>
+          <td>age</td>
+        </tr>
+
+    
+        <tr>
+          <td>NumberOfTime30-59DaysPastDueNotWorse</td>
+        </tr>
+
+    
+        <tr>
+          <td>DebtRatio</td>
+        </tr>
+
+    
+        <tr>
+          <td>MonthlyIncome</td>
+        </tr>
+
+    
+        <tr>
+          <td>NumberOfOpenCreditLinesAndLoans</td>
+        </tr>
+
+    
+        <tr>
+          <td>NumberOfTimes90DaysLate</td>
+        </tr>
+
+    
+        <tr>
+          <td>NumberRealEstateLoansOrLines</td>
+        </tr>
+
+    
+        <tr>
+          <td>NumberOfTime60-89DaysPastDueNotWorse</td>
+        </tr>
+
+    
+        <tr>
+          <td>NumberOfDependents</td>
+        </tr>
+
+    
+        <tr>
+          <td>monthly_debt_payment</td>
+        </tr>
+
+    
+        <tr>
+          <td>telecom_payment_rate</td>
+        </tr>
+
+    
+        <tr>
+          <td>utility_payment_rate</td>
+        </tr>
+
+    
+        <tr>
+          <td>spending_consistency</td>
+        </tr>
+
+    
+        <tr>
+          <td>regular_payment_count</td>
+        </tr>
+
+    
+        <tr>
+          <td>app_login_frequency</td>
+        </tr>
+
+    
+        <tr>
+          <td>is_revolving_outlier</td>
+        </tr>
+
+    
+        <tr>
+          <td>is_income_invalid</td>
+        </tr>
+
+    
+        <tr>
+          <td>is_income_missing</td>
+        </tr>
+
+    
+        <tr>
+          <td>is_dependents_missing</td>
+        </tr>
+
+    
+        <tr>
+          <td>is_late_unknown</td>
+        </tr>
+
+    
+        <tr>
+          <td>is_thin_filer</td>
+        </tr>
+
+    
+                  </tbody>
+                </table>
+            </div>
+          </details>
+        </div>
+    <div class="sk-item"><div class="sk-estimator fitted sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually sk-global" id="sk-estimator-id-21" type="checkbox" ><label for="sk-estimator-id-21" class="sk-toggleable__label fitted sk-toggleable__label-arrow"><div><div>LGBMClassifier</div></div></label><div class="sk-toggleable__content fitted" data-param-prefix="best_estimator___clf__">
+        <div class="estimator-table">
+            <details>
+                <summary>Parameters</summary>
+                <table class="parameters-table">
+                  <tbody>
+                    
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy num_leaves to clipboard"
+                 onclick="copyToClipboard('num_leaves',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">num_leaves</td>
+            <td class="value">38</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy max_depth to clipboard"
+                 onclick="copyToClipboard('max_depth',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">max_depth</td>
+            <td class="value">10</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy learning_rate to clipboard"
+                 onclick="copyToClipboard('learning_rate',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">learning_rate</td>
+            <td class="value">np.float64(0....5234005420548)</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy n_estimators to clipboard"
+                 onclick="copyToClipboard('n_estimators',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">n_estimators</td>
+            <td class="value">459</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy min_child_samples to clipboard"
+                 onclick="copyToClipboard('min_child_samples',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">min_child_samples</td>
+            <td class="value">45</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy random_state to clipboard"
+                 onclick="copyToClipboard('random_state',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">random_state</td>
+            <td class="value">42</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy n_jobs to clipboard"
+                 onclick="copyToClipboard('n_jobs',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">n_jobs</td>
+            <td class="value">1</td>
+        </tr>
+    
+
+        <tr class="user-set">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy verbose to clipboard"
+                 onclick="copyToClipboard('verbose',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">verbose</td>
+            <td class="value">-1</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy boosting_type to clipboard"
+                 onclick="copyToClipboard('boosting_type',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">boosting_type</td>
+            <td class="value">&#x27;gbdt&#x27;</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy subsample_for_bin to clipboard"
+                 onclick="copyToClipboard('subsample_for_bin',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">subsample_for_bin</td>
+            <td class="value">200000</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy objective to clipboard"
+                 onclick="copyToClipboard('objective',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">objective</td>
+            <td class="value">None</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy class_weight to clipboard"
+                 onclick="copyToClipboard('class_weight',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">class_weight</td>
+            <td class="value">None</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy min_split_gain to clipboard"
+                 onclick="copyToClipboard('min_split_gain',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">min_split_gain</td>
+            <td class="value">0.0</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy min_child_weight to clipboard"
+                 onclick="copyToClipboard('min_child_weight',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">min_child_weight</td>
+            <td class="value">0.001</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy subsample to clipboard"
+                 onclick="copyToClipboard('subsample',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">subsample</td>
+            <td class="value">1.0</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy subsample_freq to clipboard"
+                 onclick="copyToClipboard('subsample_freq',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">subsample_freq</td>
+            <td class="value">0</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy colsample_bytree to clipboard"
+                 onclick="copyToClipboard('colsample_bytree',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">colsample_bytree</td>
+            <td class="value">1.0</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy reg_alpha to clipboard"
+                 onclick="copyToClipboard('reg_alpha',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">reg_alpha</td>
+            <td class="value">0.0</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy reg_lambda to clipboard"
+                 onclick="copyToClipboard('reg_lambda',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">reg_lambda</td>
+            <td class="value">0.0</td>
+        </tr>
+    
+
+        <tr class="default">
+            <td><button type="button" class="copy-paste-icon"
+                 aria-label="Copy importance_type to clipboard"
+                 onclick="copyToClipboard('importance_type',
+                          this.parentElement.nextElementSibling)"
+            ></button></td>
+            <td class="param">importance_type</td>
+            <td class="value">&#x27;split&#x27;</td>
+        </tr>
+    
+                  </tbody>
+                </table>
+            </details>
+        </div>
+    
+        <div class="estimator-table">
+            <details>
+                <summary>Fitted attributes</summary>
+                <table class="parameters-table">
+                    <tbody>
+                        <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Value</th>
+                        </tr>
+                        
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">best_iteration_</a></td>
+           <td class="fitted-att-type">int</td>
+           <td>0</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">best_score_</a></td>
+           <td class="fitted-att-type">defaultdict</td>
+           <td>defaultdict(&lt;...redDict&#x27;&gt;, {})</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">booster_</a></td>
+           <td class="fitted-att-type">Booster</td>
+           <td>&lt;lightgbm.bas...001DAC53D2710&gt;</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">classes_</a></td>
+           <td class="fitted-att-type">ndarray[int64](2,)</td>
+           <td>[0,1]</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">evals_result_</a></td>
+           <td class="fitted-att-type">dict</td>
+           <td>{}</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">feature_importances_</a></td>
+           <td class="fitted-att-type">ndarray[int32](22,)</td>
+           <td>[ 718,1954, 381,...,  16,  52, 137]</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">feature_name_</a></td>
+           <td class="fitted-att-type">list</td>
+           <td>[&#x27;Re...es&#x27;, &#x27;age&#x27;, &#x27;Nu...se&#x27;, &#x27;De...io&#x27;, ...]</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">feature_names_in_</a></td>
+           <td class="fitted-att-type">ndarray[&lt;U36](22,)</td>
+           <td>[&#x27;RevolvingUtilizationOfUnsecuredLines&#x27;,&#x27;age&#x27;,
+ &#x27;NumberOfTime30-59DaysPastDueNotWorse&#x27;,...,&#x27;is_dependents_missing&#x27;,
+ &#x27;is_late_unknown&#x27;,&#x27;is_thin_filer&#x27;]</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">fitted_</a></td>
+           <td class="fitted-att-type">bool</td>
+           <td>True</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">n_classes_</a></td>
+           <td class="fitted-att-type">int</td>
+           <td>2</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">n_estimators_</a></td>
+           <td class="fitted-att-type">int</td>
+           <td>459</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">n_features_</a></td>
+           <td class="fitted-att-type">int</td>
+           <td>22</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">n_features_in_</a></td>
+           <td class="fitted-att-type">int</td>
+           <td>22</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">n_iter_</a></td>
+           <td class="fitted-att-type">int</td>
+           <td>459</td>
+
+
+       </tr>
+    
+
+       <tr class="default">
+           <td class="param"><a class="param-doc-link" style="text-decoration:none;">objective_</a></td>
+           <td class="fitted-att-type">str</td>
+           <td>&#x27;binary&#x27;</td>
+
+
+       </tr>
+    
+                    </tbody>
+                </table>
+            </details>
+        </div>
+    </div></div></div></div></div></div></div></div></div></div></div></div><script>/*  Authors: The scikit-learn developers
+ SPDX-License-Identifier: BSD-3-Clause
+*/
+
+function copyToClipboard(text, element) {
+    // Get the parameter prefix from the closest toggleable content
+    const toggleableContent = element.closest('.sk-toggleable__content');
+    const paramPrefix = toggleableContent ? toggleableContent.dataset.paramPrefix : '';
+    const fullParamName = paramPrefix ? `${paramPrefix}${text}` : text;
+
+    const originalStyle = element.style;
+    const computedStyle = window.getComputedStyle(element);
+    const originalWidth = computedStyle.width;
+    const originalHTML = element.innerHTML.replace('Copied!', '');
+
+    navigator.clipboard.writeText(fullParamName)
+        .then(() => {
+            element.style.width = originalWidth;
+            element.style.color = 'green';
+            element.innerHTML = "Copied!";
+
+            setTimeout(() => {
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 2000);
+        })
+        .catch(err => {
+            console.error('Failed to copy:', err);
+            element.style.color = 'red';
+            element.innerHTML = "Failed!";
+            setTimeout(() => {
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 2000);
+        });
+    return false;
+}
+
+document.querySelectorAll('.copy-paste-icon').forEach(function(element) {
+    const toggleableContent = element.closest('.sk-toggleable__content');
+    const paramPrefix = toggleableContent ? toggleableContent.dataset.paramPrefix : '';
+
+    const parent = element.parentElement;
+    if (!parent || !parent.nextElementSibling) {
+        console.warn('Expected copy-paste icon is missing from the DOM structure');
+        return;
+    }
+
+    const paramName = element.parentElement.nextElementSibling
+        .textContent.trim().split(' ')[0];
+    const fullParamName = paramPrefix ? `${paramPrefix}${paramName}` : paramName;
+
+    element.setAttribute('title', fullParamName);
+});
+
+/**
+ * Copy the list of feature names formatted as a Python list.
+ *
+ * @param {HTMLElement} element - The copy button inside a `.features` block; its siblings
+ *   contain a `details` element and a table containing feature named.
+ * @returns {boolean} Always returns `false` so callers can prevent the default click behavior.
+ */
+function copyFeatureNamesToClipboard(element) {
+    var detailsElem = element.closest('.features').querySelector('details');
+    var wasOpen = detailsElem.open;
+    detailsElem.open = true;
+    var content = element.closest('.features').querySelector('tbody')
+                  .innerText.trim();
+    if (!wasOpen) detailsElem.open = false;
+    const rows = content.split('\n').map(row => `    "${row}"`);
+    const formattedText = `[\n${rows.join(',\n')},\n]`;
+    const originalHTML = element.innerHTML.replace('✔', '');
+    const originalStyle = element.style;
+    const copyMark = document.createElement('span');
+    copyMark.innerHTML = '✔';
+    copyMark.style.color = 'blue';
+    copyMark.style.fontSize = '1em';
+
+    navigator.clipboard.writeText(formattedText)
+        .then(() => {
+            element.style.display = 'none';
+            element.parentElement.appendChild(copyMark);
+
+            setTimeout(() => {
+                copyMark.remove();
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 1000);
+        })
+        .catch(err => {
+            console.error('Failed to copy:', err);
+            element.style.color = 'orange';
+            element.innerHTML = "Failed!";
+            setTimeout(() => {
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 1000);
+        });
+    return false;
+}
+/**
+ * Adapted from Skrub
+ * https://github.com/skrub-data/skrub/blob/403466d1d5d4dc76a7ef569b3f8228db59a31dc3/skrub/_reporting/_data/templates/report.js#L789
+ * @returns "light" or "dark"
+ */
+function detectTheme(element) {
+    const body = document.querySelector('body');
+
+    // Check VSCode theme
+    const themeKindAttr = body.getAttribute('data-vscode-theme-kind');
+    const themeNameAttr = body.getAttribute('data-vscode-theme-name');
+
+    if (themeKindAttr && themeNameAttr) {
+        const themeKind = themeKindAttr.toLowerCase();
+        const themeName = themeNameAttr.toLowerCase();
+
+        if (themeKind.includes("dark") || themeName.includes("dark")) {
+            return "dark";
+        }
+        if (themeKind.includes("light") || themeName.includes("light")) {
+            return "light";
+        }
+    }
+
+    // Check Jupyter theme
+    if (body.getAttribute('data-jp-theme-light') === 'false') {
+        return 'dark';
+    } else if (body.getAttribute('data-jp-theme-light') === 'true') {
+        return 'light';
+    }
+
+    // Guess based on a parent element's color
+    const color = window.getComputedStyle(element.parentNode, null).getPropertyValue('color');
+    const match = color.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*$/i);
+    if (match) {
+        const [r, g, b] = [
+            parseFloat(match[1]),
+            parseFloat(match[2]),
+            parseFloat(match[3])
+        ];
+
+        // https://en.wikipedia.org/wiki/HSL_and_HSV#Lightness
+        const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        if (luma > 180) {
+            // If the text is very bright we have a dark theme
+            return 'dark';
+        }
+        if (luma < 75) {
+            // If the text is very dark we have a light theme
+            return 'light';
+        }
+        // Otherwise fall back to the next heuristic.
+    }
+
+    // Fallback to system preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+
+function forceTheme(elementId) {
+    const estimatorElement = document.querySelector(`#${elementId}`);
+    if (estimatorElement === null) {
+        console.error(`Element with id ${elementId} not found.`);
+    } else {
+        const theme = detectTheme(estimatorElement);
+        estimatorElement.classList.add(theme);
+    }
+}
+
+forceTheme('sk-container-id-6');</script></body>
+  </body>
+</html>
+    
