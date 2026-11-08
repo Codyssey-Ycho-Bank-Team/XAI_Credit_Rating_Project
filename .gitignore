@@ -25,3 +25,7 @@ docs/과제*.md
 .idea/
 Thumbs.db
 .DS_Store
+
+# Claude Code 개인 하네스 (컨텍스트 문서, 설정)
+.claude/
+CLAUDE.md
