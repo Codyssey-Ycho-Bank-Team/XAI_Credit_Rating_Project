@@ -54,31 +54,30 @@ print(f'일반 AUC uplift (통합-전통, 재튜닝): {normal_uplift:+.4f}')
 
 '''
 [배경]
-05(고정 하이퍼파라미터)에서 traditional/alternative/combined 3개 피처조합을
-전부 combined 기준 튜닝값으로 통일해서 비교했음. 이때 "traditional/alternative는
-자기 조합에 최적화된 값이 아니라 저평가된 것 아닌가?"라는 의문이 있어,
-각 조합별로 따로 하이퍼파라미터를 재탐색해 검증함 (RandomizedSearchCV, n_iter=30, 조합당 개별 실행).
+05에서는 세 피처조합에 combined 기준 튜닝값을 똑같이 썼음.
+"traditional/alternative는 자기 조합에 맞는 값이 아니라 저평가된 것 아닌가?"를 확인하려고
+조합마다 하이퍼파라미터를 따로 탐색함 (RandomizedSearchCV, n_iter=30, 조합당 개별 실행).
 
-[결과]
+[결과] (2026-11-08, PR #4 이후 새 데이터. CPU 4코어로 제한해서 실행)
 구분          전체     씬파일러   일반     튜닝시간   best_params
-traditional  0.8510   0.8176   0.8616   114초    max_depth=4, learning_rate=0.041, n_estimators=233, ...
-alternative  0.7902   0.7798   0.7917   89초     max_depth=3, learning_rate=0.017, n_estimators=229, ...
-combined     0.9054   0.8937   0.9077   124초    max_depth=4, learning_rate=0.041, n_estimators=233, ...
+traditional  0.8594   0.8096   0.8781   151초    max_depth=3, learning_rate=0.076, n_estimators=225, ...
+alternative  0.8439   0.8322   0.8488   112초    max_depth=3, learning_rate=0.017, n_estimators=229, ...
+combined     0.8641   0.8399   0.8746   176초    max_depth=4, learning_rate=0.041, n_estimators=233, ... (tune.py 결과와 같음)
 
-씬파일러 AUC uplift (통합-전통, 재튜닝): +0.0761 -> 목표(+0.03) 달성
-일반 AUC uplift (통합-전통, 재튜닝):     +0.0461
+씬파일러 AUC uplift (통합-전통, 재튜닝): +0.0303 -> 목표(+0.03) 달성
+일반 AUC uplift (통합-전통, 재튜닝):     -0.0035
 
 [05(고정) vs 05-1(재튜닝) 비교]
 구분          05(고정) 씬파일러   05-1(재튜닝) 씬파일러   차이
-traditional   0.8173             0.8176                +0.0003
-alternative   0.7807             0.7798                -0.0009
-combined      0.8941             0.8937                -0.0004
-uplift        +0.0768            +0.0761                -0.0007
+traditional   0.8099             0.8096                -0.0003
+alternative   0.8327             0.8322                -0.0005
+combined      0.8389             0.8399                +0.0010
+uplift        +0.0289            +0.0303               +0.0014
+(05는 N_JOBS=4 고정 결과. 05는 스레드 수만 바꿔도 uplift가 +0.029~+0.031로 움직임)
 
 [결론]
-재튜닝해도 결과가 사실상 동일함 (차이 0.001 미만, 오차범위 수준).
-특히 traditional의 best_params가 재탐색 후에도 combined 기준 04-2 값과 완전히 일치 ->
-이 데이터셋에서는 XGBoost 최적 하이퍼파라미터 영역이 피처 조합에 크게 의존하지 않음을 의미.
--> 05번에서 고정 하이퍼파라미터로 진행한 uplift 검증이 이미 공정했음을 재확인.
--> 최종 결론(씬파일러 uplift +0.03 목표 달성)에는 변화 없음, 05번 결과를 그대로 채택.
+조합별로 다시 튜닝해도 결과가 사실상 같음 (차이 0.001 수준, 스레드 수에 따른 흔들림과 같은 크기).
+traditional은 자기 최적값(max_depth=3)이 combined 값과 달랐지만 AUC는 거의 그대로 ->
+05번에서 고정 하이퍼파라미터로 비교한 것이 전통 모델을 저평가한 것이 아님을 확인.
+-> 05번 결과를 그대로 채택. 다만 uplift가 목표와 거의 같으므로 05번의 부트스트랩 신뢰구간과 함께 보고한다.
 '''
