@@ -20,7 +20,7 @@ Kaggle 데이터에는 `cs-training.csv`와 `cs-test.csv`가 있습니다. `cs-t
 | 데이터 파이프라인 (로더, 시뮬레이터, 전처리, 분할) | ✅ 완료 |
 | 모델 학습 (LR, XGBoost, LightGBM) | ✅ 완료 (최종: XGBoost, Test AUC 0.8640) |
 | MLflow 실험 추적 | ✅ 완료 (튜닝·최종 학습 기록, Registry 등록) |
-| XAI (SHAP, 거절 사유) | ⏳ 예정 |
+| XAI (SHAP, 거절 사유) | ✅ 완료 (전역·지역 SHAP 그림, 거절 사유 Top 5 `src/explainer/`) |
 | 공정성 검증, Bias Mitigation | ⏳ 예정 |
 | ANOVA 통계 검증 | ⏳ 예정 |
 | API (FastAPI), 대시보드 (Streamlit), Docker | ⏳ 예정 (docker-compose는 MLflow만 설정됨) |
@@ -107,6 +107,31 @@ python -m src.models.train            # 최종 모델 3개 학습·평가·저�
 python notebooks/03_baseline_model.py
 ```
 
+#### 7. XAI (SHAP, 거절 사유)
+
+```bash
+python -X utf8 notebooks/08_shap_global.py   # 전역 해석 그림 -> docs/shap_summary.png 등
+python -X utf8 notebooks/09_shap_local.py    # 고객별 Waterfall 그림 + 거절 사유 예시
+python -X utf8 -m src.explainer.reasons      # 거절 사유 비교 기준값 다시 만들기 (모델을 다시 학습했을 때만)
+```
+
+API에서는 고객의 원래 값 15개(`src/explainer/reasons.py`의 `INPUT_COLS`)를 dict로 넘기면 됩니다.
+
+```python
+from src.explainer.reasons import explain
+result = explain({"age": 29, "MonthlyIncome": 2500, ..., "telecom_payment_rate": 0.55})
+# {"approval_status", "default_probability", "rejection_reasons": [Top 5], "total_rejection_factors", "shap_values"}
+```
+
+- 데이터 파일 없이 `models/`의 모델·전처리기·`reason_reference_v1.0.json`만으로 동작합니다.
+- 기여도 부호는 과제 예시를 따라 신용 관점입니다 (음수 = 부도 위험을 올림 = 불리).
+
+#### 8. 테스트
+
+```bash
+python -X utf8 -m pytest
+```
+
 ## 디렉토리 구조
 
 ```
@@ -120,7 +145,8 @@ XAI_Credit_Rating_Project/
 ├── models/
 │   ├── preprocessor_v1.0.joblib # 학습된 전처리기 (API에서 새 고객 변환용)
 │   ├── {모델명}_v1.0.joblib     # 최종 모델 3개 (logistic_regression, xgboost, lightgbm)
-│   └── best_params.json         # 튜닝 결과 (모델별 불균형 처리 방식, 하이퍼파라미터, fold별 CV AUC)
+│   ├── best_params.json         # 튜닝 결과 (모델별 불균형 처리 방식, 하이퍼파라미터, fold별 CV AUC)
+│   └── reason_reference_v1.0.json # 거절 사유 비교 기준값 (승인 고객의 연령대별 중앙값)
 ├── notebooks/
 │   ├── eda.ipynb                # EDA: 컬럼별 전처리 규칙과 근거
 │   ├── 03_baseline_model.py     # 모델 3개 × 불균형 처리 2가지 비교
@@ -128,7 +154,8 @@ XAI_Credit_Rating_Project/
 │   ├── 05*_thin_filer_uplift*.py# 씬파일러 AUC 향상 측정
 │   ├── 06_ks_psi.py             # KS, PSI
 │   ├── 07_precision_recall.py   # Precision-Recall 곡선
-│   └── 08_shap_global.py        # SHAP 전역 해석
+│   ├── 08_shap_global.py        # SHAP 전역 해석 (Summary, Bar, Dependence)
+│   └── 09_shap_local.py         # SHAP 지역 해석 (Waterfall), 거절 사유 예시
 ├── src/
 │   ├── config.py                # 경로, 임계값, 피처 목록 등 모든 설정값
 │   ├── data/
@@ -136,12 +163,17 @@ XAI_Credit_Rating_Project/
 │   │   ├── simulator.py         # 대안 변수 5개, 씬파일러, 보호 속성, 편향 생성
 │   │   ├── preprocessor.py      # 오류 행 삭제, 분할, 전처리기(CreditPreprocessor)
 │   │   └── pipeline.py          # 전체 순서 실행, 결과 저장/불러오기
+│   ├── explainer/
+│   │   ├── features.py          # 변수별 한글 이름·단위·표시 방식
+│   │   ├── shap_explainer.py    # SHAP 계산, 전역·Waterfall 그림
+│   │   └── reasons.py           # 거절 사유 Top 5 자연어 생성 (API /explain용 explain())
 │   └── models/
 │       ├── estimators.py        # 모델별 탐색 범위, 불균형 처리 방식, 모델 생성 (tune·train 공통)
 │       ├── tune.py              # 모델 3개 × 불균형 처리 2가지 튜닝 -> best_params.json
 │       ├── train.py             # 최종 학습·평가·저장, MLflow 기록, Registry 등록
 │       ├── metrics.py           # AUC, KS, Precision, Recall, F1, PSI 계산
 │       └── tracking.py          # MLflow 연결, run 시작, 데이터 설정·모델 기록, 최종 모델 등록
+├── tests/                       # pytest (python -X utf8 -m pytest)
 ├── .env.example                 # 환경 변수 템플릿
 ├── docker-compose.yml           # API + 대시보드 + MLflow 실행 설정 (현재 MLflow만)
 ├── pyproject.toml               # 의존성 원본

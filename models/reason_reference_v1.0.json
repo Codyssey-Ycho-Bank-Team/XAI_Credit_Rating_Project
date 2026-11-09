@@ -1,0 +1,65 @@
+{
+  "description": "거절 사유 비교 기준값: Train에서 모델이 승인한 고객(부도 확률 < threshold)의 연령대별 중앙값 (원래 값)",
+  "threshold": 0.5,
+  "approved_count": {
+    "20-34": 7493,
+    "35-54": 31448,
+    "55+": 40350
+  },
+  "reference": {
+    "20-34": {
+      "RevolvingUtilizationOfUnsecuredLines": 0.120067514,
+      "age": 30.0,
+      "NumberOfTime30-59DaysPastDueNotWorse": 0.0,
+      "DebtRatio": 0.268481486,
+      "MonthlyIncome": 3800.0,
+      "NumberOfOpenCreditLinesAndLoans": 6.0,
+      "NumberOfTimes90DaysLate": 0.0,
+      "NumberRealEstateLoansOrLines": 0.0,
+      "NumberOfTime60-89DaysPastDueNotWorse": 0.0,
+      "NumberOfDependents": 0.0,
+      "monthly_debt_payment": 687.8988392,
+      "telecom_payment_rate": 0.8748854778012574,
+      "utility_payment_rate": 0.8339219430319447,
+      "spending_consistency": 64.65544107015302,
+      "regular_payment_count": 6.0,
+      "app_login_frequency": 14.0
+    },
+    "35-54": {
+      "RevolvingUtilizationOfUnsecuredLines": 0.108623133,
+      "age": 46.0,
+      "NumberOfTime30-59DaysPastDueNotWorse": 0.0,
+      "DebtRatio": 0.3627033585,
+      "MonthlyIncome": 6326.5,
+      "NumberOfOpenCreditLinesAndLoans": 8.0,
+      "NumberOfTimes90DaysLate": 0.0,
+      "NumberRealEstateLoansOrLines": 1.0,
+      "NumberOfTime60-89DaysPastDueNotWorse": 0.0,
+      "NumberOfDependents": 1.0,
+      "monthly_debt_payment": 1992.6278003400002,
+      "telecom_payment_rate": 0.9013152698499162,
+      "utility_payment_rate": 0.8718489132998657,
+      "spending_consistency": 66.86911644203026,
+      "regular_payment_count": 8.0,
+      "app_login_frequency": 12.0
+    },
+    "55+": {
+      "RevolvingUtilizationOfUnsecuredLines": 0.0555504735,
+      "age": 65.0,
+      "NumberOfTime30-59DaysPastDueNotWorse": 0.0,
+      "DebtRatio": 0.34930086650000003,
+      "MonthlyIncome": 5775.0,
+      "NumberOfOpenCreditLinesAndLoans": 8.0,
+      "NumberOfTimes90DaysLate": 0.0,
+      "NumberRealEstateLoansOrLines": 1.0,
+      "NumberOfTime60-89DaysPastDueNotWorse": 0.0,
+      "NumberOfDependents": 0.0,
+      "monthly_debt_payment": 1320.0,
+      "telecom_payment_rate": 0.9573831814009366,
+      "utility_payment_rate": 0.9491364617062472,
+      "spending_consistency": 72.8969200251225,
+      "regular_payment_count": 9.0,
+      "app_login_frequency": 12.0
+    }
+  }
+}
