@@ -105,6 +105,6 @@ FEATURE_GROUPS = {                       # 피처 그룹 (ANOVA 검증 1, 씬파
 PROTECTED_COLS = ["gender", "age_group"]   # 보호 속성 (공정성 분석 전용, 피처 아님)
 
 # 편향
-BIAS_RATIO = 0.1                                        # 편향 강도 (0: 편향 없음, 1: 최대 편향)
+BIAS_RATIO = 0                                          # 편향 강도 (0: 편향 없음, 1: 최대 편향)
 BIAS_MAX_SHIFT = 1.0                                    # bias_ratio = 1일 때 z를 낮추는 양
-BIAS_GROUPS = {"gender": ["female"], "age_group": ["55+"]}   # 편향을 줄 집단
+BIAS_GROUPS = {"gender": ["female"], "age_group": ["20-34"]}   # 편향을 줄 집단
