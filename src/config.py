@@ -42,7 +42,7 @@ LATE_COLS = [                     # 연체 횟수 컬럼 3개
 INVALID_AGE = 0             # 나이 0은 오류로 보고 행을 삭제한다
 REVOLVING_CLIP = 2          # 한도 사용률 2 초과 ~ 100 이하는 2로 자른다
 REVOLVING_OUTLIER = 100     # 한도 사용률 100 초과는 오류로 보고 중앙값으로 대체한다
-INCOME_INVALID_MAX = 10     # 월소득 0 ~ 10은 실제 소득이 아닌 것으로 본다
+INCOME_INVALID_MAX = 300    # 월소득 0 ~ 300은 실제 소득이 아닌 것으로 본다
 CLIP_QUANTILE = 0.999       # DebtRatio, monthly_debt_payment 상한 분위수
 LATE_UNKNOWN_CODES = [96, 98]   # 연체 컬럼의 특수 코드. 0으로 바꾸고 is_late_unknown 표시
 
@@ -54,7 +54,7 @@ AGE_GROUP_LABELS = ["20-34", "35-54", "55+"]  # 연령대 이름
 THIN_FILER_RATIO = 0.3                      # 전체 중 씬파일러로 만들 비율
 THIN_AGE_CAP = 30                           # 씬파일러 확률 계산 때 나이 상한. 30세 이후는 씬파일러 비율이 비슷함 (근거: notebooks/eda_home_credit.ipynb 7-1)
 THIN_DEPENDENTS_CAP = 3                     # 씬파일러 확률 계산 때 부양가족 상한. 4명 이상은 드물어 계수가 불안정함
-THIN_FILER_COEFS = {"age": -0.1348, "income_pct": -0.6517, "dependents": -0.0724, "debt_ratio_pct": 0.4298}   # 씬파일러 확률 로지스틱 회귀 계수 (근거: notebooks/eda_home_credit.ipynb 7-3)
+THIN_FILER_COEFS = {"age": -0.1348, "income_pct": -0.6517, "dependents": -0.0724, "debt_ratio_pct": 0.4298}   # 씬파일러 확률 로지스틱 회귀 계수 (근거: notebooks/eda_home_credit.ipynb 7-2)
 
 # 대안 변수
 ALT_COLS = [                # 생성할 대안 변수 5개
@@ -73,8 +73,8 @@ ALT_NOISE_CORR = [          # 대안 변수끼리의 노이즈 상관 (ALT_COLS 
     [0.0, 0.0, 0.0, 1.0, 0.0],
     [0.0, 0.0, 0.0, 0.0, 1.0],
 ]
-TELECOM_MEAN, TELECOM_STD = 0.85, 0.15   # telecom_payment_rate의 평균, 퍼진 정도
-UTILITY_MEAN, UTILITY_STD = 0.80, 0.20   # utility_payment_rate의 평균, 퍼진 정도
+TELECOM_MEAN, TELECOM_STD = 0.85, 0.15   # telecom_payment_rate의 평균, 표준편차
+UTILITY_MEAN, UTILITY_STD = 0.80, 0.20   # utility_payment_rate의 평균, 표준편차
 SPENDING_MONTHS = 12                     # spending_consistency 계산에 쓰는 소비액 개월 수
 SPENDING_VOL_MEDIAN = 0.5                # 소비가 들쭉날쭉한 정도의 중앙값
 SPENDING_VOL_SCALE = 0.5                 # z에 따라 들쭉날쭉한 정도가 변하는 폭
@@ -105,6 +105,6 @@ FEATURE_GROUPS = {                       # 피처 그룹 (ANOVA 검증 1, 씬파
 PROTECTED_COLS = ["gender", "age_group"]   # 보호 속성 (공정성 분석 전용, 피처 아님)
 
 # 편향
-BIAS_RATIO = 0.1                                        # 편향 강도 (0: 편향 없음, 1: 최대 편향)
+BIAS_RATIO = 0                                          # 편향 강도 (0: 편향 없음, 1: 최대 편향)
 BIAS_MAX_SHIFT = 1.0                                    # bias_ratio = 1일 때 z를 낮추는 양
-BIAS_GROUPS = {"gender": ["female"], "age_group": ["55+"]}   # 편향을 줄 집단
+BIAS_GROUPS = {"gender": ["female"], "age_group": ["20-34"]}   # 편향을 줄 집단
