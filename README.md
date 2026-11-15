@@ -144,6 +144,7 @@ result = explain({"age": 29, "MonthlyIncome": 2500, ..., "telecom_payment_rate":
 ```
 
 - 데이터 파일 없이 `models/`의 모델·전처리기·`reason_reference_v1.0.json`만으로 동작합니다.
+- 나이는 거절 사유에서 뺍니다. 바꿀 수 없는 보호 속성이기 때문이며, `shap_values`와 Waterfall 그림에는 남아 있습니다.
 - 기여도 부호는 과제 예시를 따라 신용 관점입니다 (음수 = 부도 위험을 올림 = 불리).
 
 #### 9. 공정성 검증, Bias Mitigation

@@ -2,8 +2,13 @@
 
 흐름:
   ① 원래 값(raw) 고객 1명 -> 전처리기 -> 모델 입력 22개 -> 부도 확률 + SHAP
-  ② 부도 위험을 올린 변수(SHAP > 0)를 큰 순서로 최대 5개 고름
+  ② 부도 위험을 올린 변수(SHAP > 0)를 큰 순서로 최대 5개 고름. 나이는 사유에서 뺀다 (EXCLUDED_FEATURES)
   ③ 변수마다 "현재 값 vs 비교 기준값" 문장을 만든다. 값은 스케일링 전 원래 값으로 쓴다 (예: 0.62 -> 62%)
+
+나이를 거절 사유에서 빼는 이유 (2026-11-16 결정, notebooks/09_shap_local.py 결론):
+  고객이 바꿀 수 없는 보호 속성이고, "나이 때문에 거절"이라고 알리면 연령 차별로 보일 수 있다.
+  최종 모델에서 거절 고객의 27%(20-34는 54%)가 Top 5 사유에 나이를 받았다.
+  shap_values와 Waterfall 그림에는 그대로 남겨 심사역은 볼 수 있다.
 
 비교 기준값(reference): Train에서 모델이 승인한 고객(부도 확률 < threshold)의 동일 연령대 중앙값.
   - 승인 고객 기준: "승인되려면 어느 수준이어야 하는지"를 보여주는 게 거절 사유의 목적이라서
@@ -31,6 +36,7 @@ INPUT_COLS = RAW_NUMERIC_COLS + ALT_COLS   # API가 받아야 하는 원래 값 
 DEFAULT_THRESHOLD = 0.5                     # src/models/train.py DECISION_THRESHOLD 기본값과 같게 유지
 TOP_K = 5
 MIN_SHAP = 0.005                            # 이보다 작은 기여는 "(기여도: -0.00)"으로 보여서 사유에서 뺀다
+EXCLUDED_FEATURES = {"age"}                 # 거절 사유로 쓰지 않는 변수 (바꿀 수 없는 보호 속성)
 
 
 def explain(customer: dict, top_k: int = TOP_K, threshold: float = DEFAULT_THRESHOLD) -> dict:
@@ -42,7 +48,7 @@ def explain(customer: dict, top_k: int = TOP_K, threshold: float = DEFAULT_THRES
       "default_probability": float,
       "rejection_reasons": [{"rank", "feature", "feature_name_kr", "current_value", "reference_value",
                              "shap_contribution", "explanation"}, ...],   # 부도 위험을 올린 변수 상위 top_k개
-      "total_rejection_factors": int,   # 부도 위험을 올린 변수 전체 개수 (기여 MIN_SHAP 이하는 제외)
+      "total_rejection_factors": int,   # 부도 위험을 올린 변수 전체 개수 (기여 MIN_SHAP 이하와 나이는 제외)
       "shap_values": {feature: float},  # 22개 전부, 신용 관점 부호
     }
     승인된 고객도 rejection_reasons를 채운다 (점수를 깎은 요인 안내용). 보여줄지는 API/대시보드가 정한다.
@@ -95,8 +101,6 @@ def sentence(feature: str, current, reference, contribution: float) -> str:
     if current is None:
         return f"{name} 정보가 없습니다" + tail
     shown = format_value(feature, current)
-    if feature == "age":   # 나이는 비교 대상(동일 연령대)과 같은 축이라 기준값 비교가 의미 없음
-        return f"나이({shown})가 부도 위험을 높이는 방향으로 작용했습니다" + tail
     if reference is None:
         return f"{name}{_josa(name, '이', '가')} {shown}입니다" + tail
 
@@ -149,7 +153,10 @@ def build_reference(threshold: float = DEFAULT_THRESHOLD) -> dict:
 
 
 def _is_reportable(feature: str, display: pd.Series) -> bool:
-    """표시 컬럼은 값이 1일 때만 사유가 된다 ("소득 정보 없음 = 아니오"는 사유 문장으로 쓸 수 없음)."""
+    """거절 사유로 쓸 수 있는 변수인지. 나이(EXCLUDED_FEATURES)는 쓰지 않는다.
+    표시 컬럼은 값이 1일 때만 사유가 된다 ("소득 정보 없음 = 아니오"는 사유 문장으로 쓸 수 없음)."""
+    if feature in EXCLUDED_FEATURES:
+        return False
     return FEATURE_INFO[feature]["kind"] != "flag" or display[feature] == 1
 
 
