@@ -84,9 +84,9 @@ KS/기본값 지점(0.48~0.5)은 부도의 78~79%를 잡지만 거절 고객 4�
 -> 둘 중 어느 쪽이 "맞다"가 아니라, 연체자 승인의 금전 손실(FN)과 정상 고객 부당 거절의 기회비용·차별(FP) 중
    무엇을 더 무겁게 볼지 정책으로 정해야 함.
 
--> 특정 집단(씬파일러, 보호 속성 집단)에 별도 threshold를 적용하는 방안은 공정성 파트의
-   Threshold Adjustment(Bias Mitigation 기법)와 직접 연결됨.
--> 최종 threshold는 공정성 검증 결과와 함께 결정 예정 (그 전까지 train.py 기본값 0.5 유지).
+-> 특정 집단(씬파일러, 보호 속성 집단)에 별도 threshold를 적용하는 방안은 Threshold Adjustment(Bias Mitigation 기법)에 해당하지만,
+   보호 속성에 따라 기준을 다르게 두면 그 자체가 차별로 보일 수 있어 쓰지 않음 (공정성 완화는 Reweighting, 10_fairness.py).
+-> 최종 threshold는 train.py 기본값 0.5로 정함.
 
 [리포트 활용]
 "threshold는 기술적 최적값이 아니라 비용 정책"이라는 논지의 근거로 위 건수 표를 그대로 쓸 수 있음.
