@@ -6,7 +6,8 @@
   ③ Test로 평가 (AUC, KS, Precision, Recall, F1) + Train/Test 예측 분포 PSI
   ④ models/{모델명}_{버전}.joblib 으로 저장 (API에서 불러갈 파일)
   ⑤ MLflow에 데이터 설정 / params / metrics / 모델 파일 / 전처리기 기록 (실험은 모델별로 만든다)
--> CV AUC가 가장 높은 모델을 Model Registry에 등록한다 (alias production + 태그 stage: Production).
+-> fold별 CV AUC를 ANOVA(src/statistics/anova.py 검증 2)로 비교해 고른 모델을 Model Registry에 등록한다
+   (alias production + 태그 stage: Production). 평균 1위와 유의한 차이가 없으면 기존 최종 모델(config DEFAULT_FINAL_MODEL)을 유지한다.
 
 하이퍼파라미터와 불균형 처리 방식은 tune.py가 저장한 models/best_params.json을 읽는다.
 최종 모델 선택은 Test가 아닌 CV AUC로 한다. Test로 고르면 Test 정보가 선택에 쓰여 성능이 부풀려진다.
@@ -26,17 +27,17 @@ import joblib
 import mlflow
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 
-from src.config import FEATURE_GROUPS, MODEL_DIR, PREPROCESSOR_PATH, RANDOM_STATE, TARGET
+from src.config import CV_FOLDS, FEATURE_GROUPS, MODEL_DIR, PREPROCESSOR_PATH, RANDOM_STATE, TARGET
 from src.data.pipeline import load_processed_splits
 from src.models.estimators import build_final_model, load_best_params
 from src.models.metrics import calculate_psi, classification_metrics
 from src.models.tracking import log_data_settings, log_model, register_final_model, start_experiment, start_run
+from src.statistics.anova import one_way_anova, select_algorithm
 
 logger = logging.getLogger(__name__)
 
 MODEL_VERSION = 'v1.0'
 FEATURE_GROUP = 'combined'  # 전통 17개 + 대안 5개 = 22개 (최종 모델 입력)
-CV_FOLDS = 5
 # 부도 확률이 이 값 이상이면 부도(1)로 판정 -> precision/recall/f1 계산용.
 # 최종 threshold는 공정성 검증 후 정할 예정이라(07 노트북 결론) 환경 변수로 바꿀 수 있게 둔다.
 DECISION_THRESHOLD = float(os.getenv('DECISION_THRESHOLD') or 0.5)
@@ -107,7 +108,7 @@ def train_and_log(name, model, imbalance_method, X_train, y_train, X_test, y_tes
             name, cv_scores.mean(), cv_scores.std(), test_metrics['auc'], test_metrics['ks'],
             test_metrics['f1'], psi, model_path.name,
         )
-        return {'name': name, 'cv_auc_mean': cv_scores.mean(), 'run_id': run.info.run_id}
+        return {'name': name, 'cv_scores': cv_scores.tolist(), 'cv_auc_mean': cv_scores.mean(), 'run_id': run.info.run_id}
 
 
 def main() -> None:
@@ -123,8 +124,14 @@ def main() -> None:
         for name, (model, imbalance_method) in build_models(scale_pos_weight).items()
     ]
 
-    best = max(results, key=lambda r: r['cv_auc_mean'])
-    logger.info('최종 모델: %s (CV AUC %.4f)', best['name'], best['cv_auc_mean'])
+    # 최종 모델 선정: 알고리즘별 fold AUC를 ANOVA로 비교한다 (src/statistics/anova.py와 같은 함수, 같은 규칙)
+    test = one_way_anova({r['name']: r['cv_scores'] for r in results})
+    selected = select_algorithm(test)
+    best = next(r for r in results if r['name'] == selected)
+    logger.info(
+        'ANOVA F %.3f, p %.3g -> 최종 모델: %s (CV AUC %.4f)',
+        test['f_statistic'], test['p_value'], selected, best['cv_auc_mean'],
+    )
     register_final_model(best['run_id'])
 
 

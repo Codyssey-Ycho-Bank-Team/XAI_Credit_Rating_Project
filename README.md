@@ -22,7 +22,7 @@ Kaggle 데이터에는 `cs-training.csv`와 `cs-test.csv`가 있습니다. `cs-t
 | MLflow 실험 추적 | ✅ 완료 (튜닝·최종 학습 기록, Registry 등록) |
 | XAI (SHAP, 거절 사유) | ✅ 완료 (전역·지역 SHAP 그림, 거절 사유 Top 5 `src/explainer/`) |
 | 공정성 검증, Bias Mitigation | ⏳ 예정 |
-| ANOVA 통계 검증 | ⏳ 예정 |
+| ANOVA 통계 검증 | ✅ 완료 (피처 그룹별·알고리즘별 ANOVA, Tukey HSD `src/statistics/anova.py`) |
 | API (FastAPI), 대시보드 (Streamlit), Docker | ⏳ 예정 (docker-compose는 MLflow만 설정됨) |
 
 ## 팀 구성원 역할
@@ -92,14 +92,34 @@ docker-compose up -d mlflow
 
 ```bash
 python -X utf8 -m src.models.tune     # 모델 3개 × 불균형 처리 2가지 튜닝 -> models/best_params.json (약 15분)
-python -m src.models.train            # 최종 모델 3개 학습·평가·저장 -> CV AUC 1위를 Registry에 등록
+python -m src.models.train            # 최종 모델 3개 학습·평가·저장 -> ANOVA로 고른 모델을 Registry에 등록
 ```
 
 - `-X utf8`: 한글 Windows에서 scikit-learn이 내부 파일을 cp949로 읽다가 MLflow autolog가 멈추는 문제를 막습니다.
 - `models/best_params.json`이 이미 있으면 튜닝을 건너뛰고 `train`만 실행해도 됩니다.
 - 결과는 `models/{모델명}_v1.0.joblib`와 MLflow(`localhost:5000`)에 저장됩니다.
 
-#### 6. 모델 노트북
+#### 6. ANOVA 통계 검증
+
+```bash
+python -X utf8 -m src.statistics.anova   # 검증 1·2 -> models/anova_results_v1.0.json (약 1분)
+```
+
+| 검증 | 비교 대상 | 목적 |
+| --- | --- | --- |
+| 검증 1 | 피처 그룹별: 전통 17개 / 대안 5개 / 통합 22개 (최종 알고리즘) | 대안 데이터 효용성 |
+| 검증 2 | 알고리즘별: LR / XGBoost / LightGBM (통합 22개) | 최종 알고리즘 선정 근거 |
+
+- 그룹마다 5-Fold Stratified CV의 fold별 AUC 5개로 One-way ANOVA(F-통계량, p-value, η²)를 계산하고, p < 0.05면 Tukey HSD 사후 검정을 합니다.
+- 최종 알고리즘: 평균 AUC 1위와 유의한 차이가 없으면 기존 최종 모델(`config.py`의 `DEFAULT_FINAL_MODEL`)을 유지하고, 유의하게 낮을 때만 1위로 바꿉니다. `train.py`도 같은 규칙으로 Registry에 등록합니다.
+- API에서는 저장된 결과를 그대로 돌려주면 됩니다 (데이터 파일 불필요).
+
+```python
+from src.statistics.anova import load_anova_results
+result = load_anova_results()   # {"test_1": {...}, "test_2": {...}, "selected_algorithm": "xgboost", ...}
+```
+
+#### 7. 모델 노트북
 
 프로젝트 루트에서 실행합니다 (그림을 `docs/`에 저장하기 때문).
 
@@ -107,7 +127,7 @@ python -m src.models.train            # 최종 모델 3개 학습·평가·저�
 python notebooks/03_baseline_model.py
 ```
 
-#### 7. XAI (SHAP, 거절 사유)
+#### 8. XAI (SHAP, 거절 사유)
 
 ```bash
 python -X utf8 notebooks/08_shap_global.py   # 전역 해석 그림 -> docs/shap_summary.png 등
@@ -126,7 +146,7 @@ result = explain({"age": 29, "MonthlyIncome": 2500, ..., "telecom_payment_rate":
 - 데이터 파일 없이 `models/`의 모델·전처리기·`reason_reference_v1.0.json`만으로 동작합니다.
 - 기여도 부호는 과제 예시를 따라 신용 관점입니다 (음수 = 부도 위험을 올림 = 불리).
 
-#### 8. 테스트
+#### 9. 테스트
 
 ```bash
 python -X utf8 -m pytest
@@ -146,6 +166,7 @@ XAI_Credit_Rating_Project/
 │   ├── preprocessor_v1.0.joblib # 학습된 전처리기 (API에서 새 고객 변환용)
 │   ├── {모델명}_v1.0.joblib     # 최종 모델 3개 (logistic_regression, xgboost, lightgbm)
 │   ├── best_params.json         # 튜닝 결과 (모델별 불균형 처리 방식, 하이퍼파라미터, fold별 CV AUC)
+│   ├── anova_results_v1.0.json  # ANOVA 검증 1·2 결과 (API /anova용)
 │   └── reason_reference_v1.0.json # 거절 사유 비교 기준값 (승인 고객의 연령대별 중앙값)
 ├── notebooks/
 │   ├── eda.ipynb                # EDA: 컬럼별 전처리 규칙과 근거
@@ -167,12 +188,14 @@ XAI_Credit_Rating_Project/
 │   │   ├── features.py          # 변수별 한글 이름·단위·표시 방식
 │   │   ├── shap_explainer.py    # SHAP 계산, 전역·Waterfall 그림
 │   │   └── reasons.py           # 거절 사유 Top 5 자연어 생성 (API /explain용 explain())
-│   └── models/
-│       ├── estimators.py        # 모델별 탐색 범위, 불균형 처리 방식, 모델 생성 (tune·train 공통)
-│       ├── tune.py              # 모델 3개 × 불균형 처리 2가지 튜닝 -> best_params.json
-│       ├── train.py             # 최종 학습·평가·저장, MLflow 기록, Registry 등록
-│       ├── metrics.py           # AUC, KS, Precision, Recall, F1, PSI 계산
-│       └── tracking.py          # MLflow 연결, run 시작, 데이터 설정·모델 기록, 최종 모델 등록
+│   ├── models/
+│   │   ├── estimators.py        # 모델별 탐색 범위, 불균형 처리 방식, 모델 생성 (tune·train 공통)
+│   │   ├── tune.py              # 모델 3개 × 불균형 처리 2가지 튜닝 -> best_params.json
+│   │   ├── train.py             # 최종 학습·평가·저장, MLflow 기록, ANOVA로 고른 모델 Registry 등록
+│   │   ├── metrics.py           # AUC, KS, Precision, Recall, F1, PSI 계산
+│   │   └── tracking.py          # MLflow 연결, run 시작, 데이터 설정·모델 기록, 최종 모델 등록
+│   └── statistics/
+│       └── anova.py             # ANOVA 검증 1·2, Tukey HSD, 최종 알고리즘 선정 (API /anova용 load_anova_results())
 ├── tests/                       # pytest (python -X utf8 -m pytest)
 ├── .env.example                 # 환경 변수 템플릿
 ├── docker-compose.yml           # API + 대시보드 + MLflow 실행 설정 (현재 MLflow만)
