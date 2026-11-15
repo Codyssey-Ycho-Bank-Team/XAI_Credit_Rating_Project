@@ -21,7 +21,7 @@ Kaggle 데이터에는 `cs-training.csv`와 `cs-test.csv`가 있습니다. `cs-t
 | 모델 학습 (LR, XGBoost, LightGBM) | ✅ 완료 (최종: XGBoost, Test AUC 0.8637) |
 | MLflow 실험 추적 | ✅ 완료 (튜닝·최종 학습 기록, Registry 등록) |
 | XAI (SHAP, 거절 사유) | ✅ 완료 (전역·지역 SHAP 그림, 거절 사유 Top 5 `src/explainer/`) |
-| 공정성 검증, Bias Mitigation | ⏳ 예정 |
+| 공정성 검증, Bias Mitigation | ✅ 완료 (DI Ratio·Equalized Odds, Reweighting `src/fairness/`) |
 | ANOVA 통계 검증 | ✅ 완료 (피처 그룹별·알고리즘별 ANOVA, Tukey HSD `src/statistics/anova.py`) |
 | API (FastAPI), 대시보드 (Streamlit), Docker | ⏳ 예정 (docker-compose는 MLflow만 설정됨) |
 
@@ -146,7 +146,28 @@ result = explain({"age": 29, "MonthlyIncome": 2500, ..., "telecom_payment_rate":
 - 데이터 파일 없이 `models/`의 모델·전처리기·`reason_reference_v1.0.json`만으로 동작합니다.
 - 기여도 부호는 과제 예시를 따라 신용 관점입니다 (음수 = 부도 위험을 올림 = 불리).
 
-#### 9. 테스트
+#### 9. 공정성 검증, Bias Mitigation
+
+```bash
+python -X utf8 -m src.fairness.mitigation   # 완화 전/후 비교 -> models/fairness_results_v1.0.json
+python -X utf8 notebooks/10_fairness.py     # 완화 전/후 비교표(Test·Validation), bias_ratio 효과 확인
+```
+
+| 항목 | 내용 |
+| --- | --- |
+| 보호 속성 | 성별(female/male), 연령대(20-34/35-54/55+). 보호 집단은 female, 20-34 (`config.py`의 `PROTECTED_GROUPS`) |
+| DI Ratio | 보호 집단 승인율 ÷ 비보호 집단 승인율. 0.8 미만 또는 1.25 초과면 WARNING 로그 |
+| Equalized Odds | 집단 간 TPR(정상 고객 승인율) 차이, FPR(부도 고객 승인율) 차이. 0.10 초과면 WARNING 로그 |
+| 완화 | Reweighting: 연령대 × 정답 조합마다 가중치를 주고 다시 학습 (`models/xgboost_reweighted_v1.0.joblib`). 최종 모델은 바꾸지 않음 |
+
+API에서는 저장된 결과를 그대로 돌려주면 됩니다 (데이터 파일 불필요). `/fairness`는 `before`, `/fairness/mitigation`은 `before`와 `after`를 씁니다.
+
+```python
+from src.fairness.mitigation import load_fairness_results
+result = load_fairness_results()   # {"before": {"gender": {"di_ratio", ...}, "age_group": {...}}, "after": {...}, ...}
+```
+
+#### 10. 테스트
 
 ```bash
 python -X utf8 -m pytest
@@ -167,6 +188,8 @@ XAI_Credit_Rating_Project/
 │   ├── {모델명}_v1.0.joblib     # 최종 모델 3개 (logistic_regression, xgboost, lightgbm)
 │   ├── best_params.json         # 튜닝 결과 (모델별 불균형 처리 방식, 하이퍼파라미터, fold별 CV AUC)
 │   ├── anova_results_v1.0.json  # ANOVA 검증 1·2 결과 (API /anova용)
+│   ├── fairness_results_v1.0.json # 공정성 완화 전/후 결과 (API /fairness, /fairness/mitigation용)
+│   ├── xgboost_reweighted_v1.0.joblib # Reweighting으로 다시 학습한 비교용 모델 (최종 모델 아님)
 │   └── reason_reference_v1.0.json # 거절 사유 비교 기준값 (승인 고객의 연령대별 중앙값)
 ├── notebooks/
 │   ├── eda.ipynb                # EDA: 컬럼별 전처리 규칙과 근거
@@ -176,7 +199,8 @@ XAI_Credit_Rating_Project/
 │   ├── 06_ks_psi.py             # KS, PSI
 │   ├── 07_precision_recall.py   # Precision-Recall 곡선
 │   ├── 08_shap_global.py        # SHAP 전역 해석 (Summary, Bar, Dependence)
-│   └── 09_shap_local.py         # SHAP 지역 해석 (Waterfall), 거절 사유 예시
+│   ├── 09_shap_local.py         # SHAP 지역 해석 (Waterfall), 거절 사유 예시
+│   └── 10_fairness.py           # 공정성 완화 전/후 비교, bias_ratio 효과 확인
 ├── src/
 │   ├── config.py                # 경로, 임계값, 피처 목록 등 모든 설정값
 │   ├── data/
@@ -188,6 +212,9 @@ XAI_Credit_Rating_Project/
 │   │   ├── features.py          # 변수별 한글 이름·단위·표시 방식
 │   │   ├── shap_explainer.py    # SHAP 계산, 전역·Waterfall 그림
 │   │   └── reasons.py           # 거절 사유 Top 5 자연어 생성 (API /explain용 explain())
+│   ├── fairness/
+│   │   ├── metrics.py           # 집단별 승인율·TPR·FPR, DI Ratio, Equalized Odds (기준을 벗어나면 WARNING)
+│   │   └── mitigation.py        # Reweighting 완화 전/후 비교 (API /fairness용 load_fairness_results())
 │   ├── models/
 │   │   ├── estimators.py        # 모델별 탐색 범위, 불균형 처리 방식, 모델 생성 (tune·train 공통)
 │   │   ├── tune.py              # 모델 3개 × 불균형 처리 2가지 튜닝 -> best_params.json
