@@ -32,7 +32,7 @@ FEATURE_INFO: dict[str, dict] = {
     "is_revolving_outlier": {"kr": "신용한도 사용률 이상치", "kind": "flag",
                              "text": "신용한도 사용률이 비정상적인 값(100 초과)으로 신고되어 있습니다"},
     "is_income_invalid": {"kr": "소득 확인 불가", "kind": "flag",
-                          "text": "신고된 월소득이 너무 낮아(10 이하) 소득을 확인할 수 없습니다"},
+                          "text": "신고된 월소득이 너무 낮아(300 이하) 소득을 확인할 수 없습니다"},
     "is_income_missing": {"kr": "소득 정보 없음", "kind": "flag",
                           "text": "월소득 정보가 없습니다"},
     "is_dependents_missing": {"kr": "부양가족 정보 없음", "kind": "flag",

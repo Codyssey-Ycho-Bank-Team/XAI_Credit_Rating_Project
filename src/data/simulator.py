@@ -78,7 +78,7 @@ def home_credit_thin_features(application: pd.DataFrame) -> pd.DataFrame:
 
 def gmsc_thin_features(df: pd.DataFrame) -> pd.DataFrame:
     """Give Me Some Credit 고객을 씬파일러 가중치용 공통 컬럼 4개로 바꾼다 (home_credit_thin_features와 같은 의미).
-    소득이 결측이거나 0~10이면 소득과 DebtRatio를 백분위 0.5(중앙값)로 둔다."""
+    소득이 결측이거나 0~300이면 소득과 DebtRatio를 백분위 0.5(중앙값)로 둔다."""
     valid_income = df["MonthlyIncome"] > INCOME_INVALID_MAX   # 결측은 False
     return pd.DataFrame({
         "age": df["age"],
@@ -167,7 +167,7 @@ def _to_spending_consistency(z: np.ndarray, monthly_noise: np.ndarray) -> np.nda
 
 
 def _income_level(df: pd.DataFrame) -> pd.Series:
-    """MonthlyIncome을 3구간(0, 1, 2)으로 나눈다. 결측과 0~10은 중산층(1)."""
+    """MonthlyIncome을 3구간(0, 1, 2)으로 나눈다. 결측과 0~300은 중산층(1)."""
     income = df["MonthlyIncome"]
     level = pd.Series(1, index=df.index)
     level[income < INCOME_LEVEL_BINS[0]] = 0
@@ -183,7 +183,7 @@ def _select_thin_filers(df: pd.DataFrame, ratio: float, rng: np.random.Generator
 
 
 def _thin_filer_probability(df: pd.DataFrame, ratio: float) -> pd.Series:
-    """Home Credit에서 구한 계수로 고객별 씬파일러 확률을 계산한다 (근거: notebooks/eda_home_credit.ipynb 7-3).
+    """Home Credit에서 구한 계수로 고객별 씬파일러 확률을 계산한다 (근거: notebooks/eda_home_credit.ipynb 7-2).
     계수는 그대로 두고, 평균 확률이 ratio가 되도록 절편만 다시 구한다."""
     if not 0 < ratio < 1:
         return pd.Series(float(ratio >= 1), index=df.index)
