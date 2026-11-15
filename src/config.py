@@ -17,6 +17,7 @@ PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"         # 파이프라인 �
 MODEL_DIR = PROJECT_ROOT / "models"                         # 학습된 모델 저장 폴더
 PREPROCESSOR_PATH = MODEL_DIR / "preprocessor_v1.0.joblib"  # 학습된 전처리기 저장 경로
 ANOVA_RESULTS_PATH = MODEL_DIR / "anova_results_v1.0.json"  # ANOVA 검증 결과 저장 경로 (API /anova가 읽는다)
+FAIRNESS_RESULTS_PATH = MODEL_DIR / "fairness_results_v1.0.json"   # 공정성 완화 전/후 결과 저장 경로 (API /fairness, /fairness/mitigation이 읽는다)
 
 # Kaggle 데이터셋 이름
 GMSC_COMPETITION = "GiveMeSomeCredit"                   # Give Me Some Credit
@@ -115,3 +116,9 @@ PROTECTED_COLS = ["gender", "age_group"]   # 보호 속성 (공정성 분석 전
 BIAS_RATIO = 0                                          # 편향 강도 (0: 편향 없음, 1: 최대 편향)
 BIAS_MAX_SHIFT = 1.0                                    # bias_ratio = 1일 때 z를 낮추는 양
 BIAS_GROUPS = {"gender": ["female"], "age_group": ["20-34"]}   # 편향을 줄 집단
+
+# 공정성 검증, Bias Mitigation (src/fairness/)
+PROTECTED_GROUPS = {"gender": ["female"], "age_group": ["20-34"]}   # DI Ratio의 보호 집단. 같은 속성의 나머지가 비보호 집단 (편향을 줄 집단과 같다)
+DI_RANGE = (0.8, 1.25)               # DI Ratio 정상 범위. 벗어나면 WARNING (0.8: four-fifths rule, 1.25 = 1 ÷ 0.8)
+EO_MAX_DIFF = 0.10                   # Equalized Odds: 집단 간 TPR·FPR 차이 상한. 넘으면 WARNING
+MITIGATION_ATTRIBUTE = "age_group"   # Reweighting으로 완화할 보호 속성 (편향 강도 0 데이터에서 기준을 벗어난 속성)

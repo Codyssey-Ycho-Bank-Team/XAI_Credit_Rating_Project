@@ -98,6 +98,8 @@ docker==7.2.0
     # via mlflow
 executing==2.2.1
     # via stack-data
+fairlearn==0.15.0
+    # via xai-credit-rating (pyproject.toml)
 fastapi==0.142.2
     # via mlflow-skinny
 fastjsonschema==2.22.2
@@ -297,6 +299,7 @@ multidict==6.9.1
     #   yarl
 narwhals==2.26.0
     # via
+    #   fairlearn
     #   lightgbm
     #   scikit-learn
 nbclient==0.11.0
@@ -326,6 +329,7 @@ numpy==2.5.3
     # via
     #   xai-credit-rating (pyproject.toml)
     #   contourpy
+    #   fairlearn
     #   imbalanced-learn
     #   lightgbm
     #   matplotlib
@@ -374,6 +378,7 @@ packaging==26.3
 pandas==3.0.6
     # via
     #   xai-credit-rating (pyproject.toml)
+    #   fairlearn
     #   mlflow
     #   shap
 pandocfilters==1.5.1
@@ -504,6 +509,7 @@ rpds-py==2026.9.1
 scikit-learn==1.9.1
     # via
     #   xai-credit-rating (pyproject.toml)
+    #   fairlearn
     #   imbalanced-learn
     #   mlflow
     #   shap
@@ -512,6 +518,7 @@ scikit-learn==1.9.1
 scipy==1.18.1
     # via
     #   xai-credit-rating (pyproject.toml)
+    #   fairlearn
     #   imbalanced-learn
     #   lightgbm
     #   mlflow

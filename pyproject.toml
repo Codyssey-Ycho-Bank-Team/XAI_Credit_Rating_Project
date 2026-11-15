@@ -28,6 +28,8 @@ dependencies = [
     "matplotlib==3.11.2",
     # 실험 추적
     "mlflow==3.16.1",
+    # 공정성
+    "fairlearn==0.15.0",
 ]
 
 [project.optional-dependencies]

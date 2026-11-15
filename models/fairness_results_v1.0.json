@@ -1,0 +1,178 @@
+{
+  "description": "완화 전(최종 모델) / 후(Reweighting으로 다시 학습한 모델)의 성능과 보호 속성별 공정성 지표 (Test)",
+  "created_at": "2026-11-16T04:23:34",
+  "data": {
+    "thin_filer_ratio": 0.3,
+    "bias_ratio": 0,
+    "bias_groups": {
+      "gender": [
+        "female"
+      ],
+      "age_group": [
+        "20-34"
+      ]
+    },
+    "seed": 42,
+    "created_at": "2026-11-16T03:18:01",
+    "rows": {
+      "train": 104999,
+      "valid": 22500,
+      "test": 22500
+    }
+  },
+  "split": "test",
+  "threshold": 0.5,
+  "criteria": {
+    "di_range": [
+      0.8,
+      1.25
+    ],
+    "eo_max_diff": 0.1
+  },
+  "mitigation": {
+    "method": "reweighting",
+    "attribute": "age_group",
+    "weights": {
+      "20-34": {
+        "정상(0)": 1.0505,
+        "부도(1)": 0.5985
+      },
+      "35-54": {
+        "정상(0)": 1.018,
+        "부도(1)": 0.8018
+      },
+      "55+": {
+        "정상(0)": 0.9693,
+        "부도(1)": 1.7934
+      }
+    }
+  },
+  "before": {
+    "model": "xgboost_v1.0",
+    "performance": {
+      "auc": 0.8637087313743652,
+      "ks": 0.5775598594261115,
+      "approval_rate": 0.7596888888888889,
+      "approved_default_rate": 0.019774176563505528
+    },
+    "gender": {
+      "protected": [
+        "female"
+      ],
+      "di_ratio": 1.0131751858024256,
+      "equalized_odds_tpr_diff": 0.011749526743363603,
+      "equalized_odds_fpr_diff": 0.02393617021276595,
+      "groups": {
+        "female": {
+          "count": 11335.0,
+          "default_rate": 0.06634318482576096,
+          "approval_rate": 0.764622849580944,
+          "tpr": 0.8038363413020883,
+          "fpr": 0.2127659574468085
+        },
+        "male": {
+          "count": 11165.0,
+          "default_rate": 0.06735333631885354,
+          "approval_rate": 0.7546798029556651,
+          "tpr": 0.7920868145587247,
+          "fpr": 0.23670212765957446
+        }
+      }
+    },
+    "age_group": {
+      "protected": [
+        "20-34"
+      ],
+      "di_ratio": 0.6931698149443737,
+      "equalized_odds_tpr_diff": 0.29635991327196165,
+      "equalized_odds_fpr_diff": 0.30542688081149616,
+      "groups": {
+        "20-34": {
+          "count": 2970.0,
+          "default_rate": 0.11784511784511786,
+          "approval_rate": 0.5488215488215489,
+          "tpr": 0.6083969465648855,
+          "fpr": 0.10285714285714286
+        },
+        "35-54": {
+          "count": 9753.0,
+          "default_rate": 0.08366656413411255,
+          "approval_rate": 0.6956833794729826,
+          "tpr": 0.7408526351124538,
+          "fpr": 0.20098039215686275
+        },
+        "55+": {
+          "count": 9777.0,
+          "default_rate": 0.034570931778664216,
+          "approval_rate": 0.8875933312877161,
+          "tpr": 0.9047568598368472,
+          "fpr": 0.40828402366863903
+        }
+      }
+    }
+  },
+  "after": {
+    "model": "xgboost_reweighted_v1.0",
+    "performance": {
+      "auc": 0.8544707603879971,
+      "ks": 0.547613045848652,
+      "approval_rate": 0.7605333333333333,
+      "approved_default_rate": 0.022206638616175785
+    },
+    "gender": {
+      "protected": [
+        "female"
+      ],
+      "di_ratio": 1.0092426763052926,
+      "equalized_odds_tpr_diff": 0.009004655039689058,
+      "equalized_odds_fpr_diff": 0.029255319148936143,
+      "groups": {
+        "female": {
+          "count": 11335.0,
+          "default_rate": 0.06634318482576096,
+          "approval_rate": 0.7640052933392149,
+          "tpr": 0.8013795710101106,
+          "fpr": 0.23803191489361702
+        },
+        "male": {
+          "count": 11165.0,
+          "default_rate": 0.06735333631885354,
+          "approval_rate": 0.7570085087326467,
+          "tpr": 0.7923749159704215,
+          "fpr": 0.26728723404255317
+        }
+      }
+    },
+    "age_group": {
+      "protected": [
+        "20-34"
+      ],
+      "di_ratio": 0.9039262607462554,
+      "equalized_odds_tpr_diff": 0.05529207632132083,
+      "equalized_odds_fpr_diff": 0.01842586146884792,
+      "groups": {
+        "20-34": {
+          "count": 2970.0,
+          "default_rate": 0.11784511784511786,
+          "approval_rate": 0.6962962962962963,
+          "tpr": 0.7568702290076336,
+          "fpr": 0.24285714285714285
+        },
+        "35-54": {
+          "count": 9753.0,
+          "default_rate": 0.08366656413411255,
+          "approval_rate": 0.748077514610889,
+          "tpr": 0.7925478348439073,
+          "fpr": 0.2610294117647059
+        },
+        "55+": {
+          "count": 9777.0,
+          "default_rate": 0.034570931778664216,
+          "approval_rate": 0.7924721284647642,
+          "tpr": 0.8121623053289544,
+          "fpr": 0.24260355029585798
+        }
+      }
+    }
+  }
+}
