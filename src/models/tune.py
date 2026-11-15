@@ -55,7 +55,7 @@ def tune_one(name: str, method: str, X, y, scale_pos_weight: float) -> dict:
         search.fit(X, y)
         tune_seconds = time.time() - start
 
-        # 최적 조합의 fold별 AUC (ANOVA 검증 2: 알고리즘별 비교에 쓸 수 있다)
+        # 최적 조합의 fold별 AUC (참고용. ANOVA는 src/statistics/anova.py가 최종 모델로 다시 계산한다)
         best = search.best_index_
         fold_scores = [float(search.cv_results_[f"split{i}_test_score"][best]) for i in range(CV_FOLDS)]
         for fold, score in enumerate(fold_scores):
