@@ -4,7 +4,7 @@
 
 ## 프로젝트 개요
 
-금융 이력이 부족한 씬파일러(Thin-filer)를 통신비·공과금 납부 같은 대안 데이터로 평가하는 신용평가 모델을 만들고, SHAP으로 판단 근거를 설명하며, 성별·연령대에 대한 공정성을 검증합니다.
+금융 이력이 부족한 씬파일러(Thin-filer)를 통신비·공과금 납부 같은 대안 데이터로 평가하는 신용평가 모델을 만들고, SHAP으로 판단 근거를 설명하며, 성별·연령대에 대한 공정성을 검증하고 편향을 완화합니다. 모델과 피처 그룹 사이의 성능 차이는 ANOVA로 통계 검증합니다.
 
 - **데이터**: Kaggle [Give Me Some Credit](https://www.kaggle.com/c/GiveMeSomeCredit) (150,000명)
 - **대안 데이터**: 원본에 없어서 시뮬레이션으로 생성합니다 (실제 데이터 아님).
@@ -29,10 +29,10 @@ Kaggle 데이터에는 `cs-training.csv`와 `cs-test.csv`가 있습니다. `cs-t
 
 | 이름 | 역할 |
 | --- | --- |
-|  |  |
-|  |  |
-|  |  |
-|  |  |
+| 고윤 | 모델 학습·검증, XAI(SHAP), 공정성(Bias) |
+| 은주 | 데이터 전처리 |
+| 태영 | ANOVA 통계 검증, MLflow 실험 추적 |
+| 서영, 서연 | MSA 배포(API 엔드포인트, mock 데이터 기반 화면 구성, 새 환경에서 `docker-compose up` 한 번으로 실행되는 Docker 구성), 테스트, Git 관리 |
 
 ## 실행 방법
 
@@ -91,7 +91,7 @@ docker-compose up -d mlflow
 #### 5. 튜닝과 최종 학습
 
 ```bash
-python -X utf8 -m src.models.tune     # 모델 3개 × 불균형 처리 2가지 튜닝 -> models/best_params.json (약 15분)
+python -X utf8 -m src.models.tune     # 모델 3개 × 불균형 처리 2가지 튜닝 -> models/best_params.json (약 15~20분)
 python -m src.models.train            # 최종 모델 3개 학습·평가·저장 -> ANOVA로 고른 모델을 Registry에 등록
 ```
 
@@ -121,11 +121,16 @@ result = load_anova_results()   # {"test_1": {...}, "test_2": {...}, "selected_a
 
 #### 7. 모델 노트북
 
-프로젝트 루트에서 실행합니다 (그림을 `docs/`에 저장하기 때문).
+프로젝트 루트에서 실행합니다 (그림을 `docs/`에 저장하기 때문). 최종 모델을 다시 학습했으면 아래 노트북과 8, 9번을 다시 실행하고, 각 노트북 끝의 `[결과]` 주석 수치를 갱신합니다.
 
 ```bash
-python notebooks/03_baseline_model.py
+python notebooks/05_thin_filter_uplift.py            # 씬파일러 AUC uplift + 부트스트랩 신뢰구간
+python notebooks/05-1_thin_filer_uplift_retuned.py   # 피처 그룹별로 다시 튜닝해 05와 비교 (약 9분)
+python notebooks/06_ks_psi.py                        # KS, PSI
+python notebooks/07_precision_recall.py              # Precision-Recall 곡선 -> docs/precision_recall_curve.png
 ```
+
+- `03_baseline_model.py`, `04-*`는 옛 데이터로 진행한 기록입니다 (주석 수치는 폐기, `docs/model_selection.md` 참고).
 
 #### 8. XAI (SHAP, 거절 사유)
 
@@ -194,7 +199,8 @@ XAI_Credit_Rating_Project/
 │   └── reason_reference_v1.0.json # 거절 사유 비교 기준값 (승인 고객의 연령대별 중앙값)
 ├── notebooks/
 │   ├── eda.ipynb                # EDA: 컬럼별 전처리 규칙과 근거
-│   ├── 03_baseline_model.py     # 모델 3개 × 불균형 처리 2가지 비교
+│   ├── eda_home_credit.ipynb    # Home Credit 분석: 씬파일러 확률 계수의 근거
+│   ├── 03_baseline_model.py     # 모델 3개 × 불균형 처리 2가지 비교 (옛 데이터 기준)
 │   ├── 04-*_hyperparameter_*.py # 하이퍼파라미터 튜닝 (이전 방식, 지금은 src/models/tune.py)
 │   ├── 05*_thin_filer_uplift*.py# 씬파일러 AUC 향상 측정
 │   ├── 06_ks_psi.py             # KS, PSI
@@ -238,6 +244,7 @@ XAI_Credit_Rating_Project/
 | --- | --- | --- |
 | `KAGGLE_API_TOKEN` | 원본 데이터 자동 다운로드용 Kaggle API 키. Kaggle → Settings → API에서 발급합니다. 두 대회 페이지([Give Me Some Credit](https://www.kaggle.com/c/GiveMeSomeCredit), [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk))에서 각각 규칙 동의(Join Competition)도 해야 받을 수 있습니다. | `data/raw/`에 원본 파일이 없을 때만 |
 | `MLFLOW_TRACKING_URI` | 학습 코드가 기록을 보낼 MLflow 서버 주소. 없으면 `http://localhost:5000`을 씁니다. | 아니요 |
+| `DECISION_THRESHOLD` | 승인/거절을 가르는 부도 확률 기준값. 없으면 0.5를 씁니다. 최종 학습의 Precision·Recall·F1과 공정성 계산에 쓰입니다 (거절 사유 `explain()`은 `reasons.py`의 기본값 0.5를 따로 씀). | 아니요 |
 
 ## 데이터 파이프라인
 
@@ -302,7 +309,7 @@ raw = load_raw_splits()                                 # 원래 값 (예: 통�
 - `is_thin_filer`는 피처에 포함됩니다. 씬파일러만 따로 평가할 때도 이 컬럼으로 나눕니다.
 - 전통 / 대안 / 통합 모델 비교는 `FEATURE_GROUPS["traditional"]`(17개), `["alternative"]`(5개), `["combined"]`(22개)를 씁니다.
 - SMOTE 같은 불균형 처리는 **Train에만** 적용합니다.
-- 대안 데이터는 부도 여부를 바탕으로 만든 **시뮬레이션 데이터**입니다.
+- 대안 데이터는 전통 변수로 만든 신용 점수에 노이즈를 더해 만든 **시뮬레이션 데이터**입니다 (실제 데이터 아님, 부도 여부를 직접 섞지 않음).
 
 ## MLflow 실험 기록
 
@@ -331,7 +338,7 @@ register_final_model(run.info.run_id)               # 최종 모델 1개만 등�
 ```
 
 - 기록은 항상 MLflow 서버를 거칩니다 (`tracking.py`의 함수가 서버에 연결합니다). 서버 없이 파일에 바로 기록하면 모델 파일 위치가 내 PC 경로로 저장돼서, 다른 PC에서는 모델 파일을 열 수 없습니다.
-- `mlflow.start_run()`, `mlflow.sklearn.log_model()` 대신 `start_run()`, `log_model()`을 씁니다. MLflow가 자동으로 적는 내 PC 정보(OS 사용자 이름, 파일 전체 경로)를 Git 사용자 이름과 프로젝트 기준 경로로 바꿔 기록합니다.
+- `mlflow.start_run()`, `mlflow.sklearn.log_model()` 대신 `start_run()`, `log_model()`을 씁니다. MLflow가 자동으로 적는 내 PC 정보(OS 사용자 이름, 파일 전체 경로)를 Git 사용자 이름과 프로젝트 기준 경로로 바꿔 기록합니다. 튜닝 때 autolog가 자동으로 만드는 하위 run도 같습니다 (저장소가 공개라 PC 정보가 올라가지 않게).
 
 ### 기록 규칙
 
@@ -347,6 +354,7 @@ register_final_model(run.info.run_id)               # 최종 모델 1개만 등�
 ### 주의할 점
 
 - `mlflow.db`는 파일 하나라서, 여러 명이 각자 기록해서 올리면 Git에서 합칠 수 없습니다. **최종 기록은 한 사람만 커밋합니다.**
+- 데이터 설정을 바꾸기 전(PR #9 전: 편향 강도 0.1 등)에 기록한 옛 run도 남겨 두었습니다. params의 `data_bias_ratio` 등 데이터 설정과 날짜로 구분합니다.
 - MLflow 3부터 Stage 기능이 폐지 예정(deprecated)이라, 최종 모델은 alias와 태그로 표시합니다.
 
 ## 의존성 관리
