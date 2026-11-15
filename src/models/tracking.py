@@ -1,6 +1,8 @@
 import json
+import os
 import subprocess
 import sys
+from functools import lru_cache
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -81,11 +83,29 @@ def _connect() -> None:
             f"MLflow 서버({MLFLOW_TRACKING_URI})에 연결할 수 없습니다. 먼저 `docker-compose up -d mlflow`를 실행하세요."
         ) from e
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    _hide_pc_info()
+
+
+def _hide_pc_info() -> None:
+    """autolog가 자동으로 만드는 하위 run에도 내 PC 정보 대신 _run_tags()의 값이 적히게 한다.
+    MLflow는 사용자 이름을 MLFLOW_TRACKING_USERNAME 환경 변수(없으면 OS 사용자 이름)에서, 실행 파일 경로를 sys.argv[0]에서 가져온다.
+    MLFLOW_TRACKING_USERNAME은 원래 서버 로그인용이지만, 비밀번호(MLFLOW_TRACKING_PASSWORD)가 없으면 로그인 정보로 보내지 않는다."""
+    user, source = _pc_free_identity()
+    os.environ["MLFLOW_TRACKING_USERNAME"] = user
+    sys.argv[0] = source
 
 
 def _run_tags() -> dict[str, str]:
     """내 PC 정보 대신 기록할 태그를 만든다.
     사용자는 Git 사용자 이름(커밋에 이미 공개됨), 파일은 프로젝트 폴더 기준 경로를 쓴다."""
+    user, source = _pc_free_identity()
+    return {"mlflow.user": user, "mlflow.source.name": source}
+
+
+@lru_cache(maxsize=1)
+def _pc_free_identity() -> tuple[str, str]:
+    """(Git 사용자 이름, 프로젝트 폴더 기준 실행 파일 경로). 처음 한 번만 계산한다.
+    _hide_pc_info()가 sys.argv[0]을 바꾼 뒤에도 바꾸기 전 값으로 같은 결과를 돌려주기 위해서다."""
     try:
         user = subprocess.run(
             ["git", "config", "user.name"], capture_output=True, text=True, encoding="utf-8", cwd=PROJECT_ROOT
@@ -95,4 +115,4 @@ def _run_tags() -> dict[str, str]:
 
     script = Path(sys.argv[0]).resolve()
     source = script.relative_to(PROJECT_ROOT).as_posix() if script.is_relative_to(PROJECT_ROOT) else script.name
-    return {"mlflow.user": user or "unknown", "mlflow.source.name": source}
+    return user or "unknown", source
