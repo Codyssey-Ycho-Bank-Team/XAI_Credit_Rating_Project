@@ -18,7 +18,7 @@ Kaggle 데이터에는 `cs-training.csv`와 `cs-test.csv`가 있습니다. `cs-t
 | 단계 | 상태 |
 | --- | --- |
 | 데이터 파이프라인 (로더, 시뮬레이터, 전처리, 분할) | ✅ 완료 |
-| 모델 학습 (LR, XGBoost, LightGBM) | ✅ 완료 (최종: XGBoost, Test AUC 0.8640) |
+| 모델 학습 (LR, XGBoost, LightGBM) | ✅ 완료 (최종: XGBoost, Test AUC 0.8637) |
 | MLflow 실험 추적 | ✅ 완료 (튜닝·최종 학습 기록, Registry 등록) |
 | XAI (SHAP, 거절 사유) | ✅ 완료 (전역·지역 SHAP 그림, 거절 사유 Top 5 `src/explainer/`) |
 | 공정성 검증, Bias Mitigation | ⏳ 예정 |
@@ -232,17 +232,17 @@ XAI_Credit_Rating_Project/
 
 | 변수 | 목표 상관 (절댓값) | 실제 상관 (전체) | 근거 | 출처 |
 | --- | --- | --- | --- | --- |
-| `telecom_payment_rate` | 0.4 | −0.355 | 통신·공과금 납부 기록만으로도 카드·주택담보대출 연체를 예측할 수 있음 | [PERC (2015)](https://www.perc.net/wp-content/uploads/2015/05/Alt-Data-and-Traditional-Accounts.pdf) |
-| `utility_payment_rate` | 0.4 | −0.346 | 위와 같음 (같은 연구에서 통신비와 함께 다룸) | [PERC (2015)](https://www.perc.net/wp-content/uploads/2015/05/Alt-Data-and-Traditional-Accounts.pdf) |
-| `spending_consistency` | 0.3 | −0.284 | 소비 변동성을 직접 다룬 연구는 없음 (소상공인 계좌 잔액 변동성 연구만 있음) | [FinRegLab (2025)](https://finreglab.org/wp-content/uploads/2025/06/FinRegLab_2025-06-03_Press-Release_Study-Shows-Cash-Flow-Data-Can-Expand-Small-Business-Lending-1.pdf) |
-| `regular_payment_count` | 0.3 | −0.253 | 정기결제 건수를 다룬 연구를 찾지 못함 | - |
-| `app_login_frequency` | 0.3 | −0.251 | 앱 사용 행태 연구는 있으나 로그인 빈도만 따로 본 연구는 없고 예측력도 약함 | [ABFER (2019)](https://abfer.org/media/abfer-events-2019/annual-conference/special/28-P3-Fintech-and-Credit-Scoring-for-Millenial-Generation.pdf) |
+| `telecom_payment_rate` | 0.4 | −0.359 | 통신·공과금 납부 기록만으로도 카드·주택담보대출 연체를 예측할 수 있음 | [PERC (2015)](https://www.perc.net/wp-content/uploads/2015/05/Alt-Data-and-Traditional-Accounts.pdf) |
+| `utility_payment_rate` | 0.4 | −0.351 | 위와 같음 (같은 연구에서 통신비와 함께 다룸) | [PERC (2015)](https://www.perc.net/wp-content/uploads/2015/05/Alt-Data-and-Traditional-Accounts.pdf) |
+| `spending_consistency` | 0.3 | −0.287 | 소비 변동성을 직접 다룬 연구는 없음 (소상공인 계좌 잔액 변동성 연구만 있음) | [FinRegLab (2025)](https://finreglab.org/wp-content/uploads/2025/06/FinRegLab_2025-06-03_Press-Release_Study-Shows-Cash-Flow-Data-Can-Expand-Small-Business-Lending-1.pdf) |
+| `regular_payment_count` | 0.3 | −0.254 | 정기결제 건수를 다룬 연구를 찾지 못함 | - |
+| `app_login_frequency` | 0.3 | −0.258 | 앱 사용 행태 연구는 있으나 로그인 빈도만 따로 본 연구는 없고 예측력도 약함 | [ABFER (2019)](https://abfer.org/media/abfer-events-2019/annual-conference/special/28-P3-Fintech-and-Credit-Scoring-for-Millenial-Generation.pdf) |
 
 **목표보다 낮게 나오는 이유와 용인하는 이유**
 - 대안 변수는 신용 점수로만 만들고 타겟을 직접 섞지 않습니다. 그래서 타겟과의 상관은 신용 점수 자체의 상관(r ≈ 0.34)을 넘을 수 없고, Copula 변환(Beta, Poisson 등)을 거치며 조금 더 낮아집니다.
 - 타겟을 직접 섞어 0.3 ~ 0.5를 맞추면, 5개 변수에 같은 타겟이 쌓여 통합 모델 AUC가 0.90까지 올라갑니다. 대안 변수만 쓴 모델이 전통 변수 모델보다 높아지는, 현실적이지 않은 결과입니다. 섞지 않으면 통합 AUC는 0.86입니다 (XGBoost, Test).
 - 과제의 생성 로직 표도 `regular_payment_count`와 `app_login_frequency`는 타겟 없이 소득·연령대로만 만들어, 이 두 변수의 상관이 0.3에 못 미치는 설계입니다.
-- 하한에서 가장 멀리 벗어난 변수도 0.05 이내(−0.251)입니다.
+- 하한에서 가장 멀리 벗어난 변수도 0.05 이내(−0.254)입니다.
 
 ### 결과물 (`data/processed/`)
 
@@ -314,7 +314,7 @@ register_final_model(run.info.run_id)               # 최종 모델 1개만 등�
 | params | 하이퍼파라미터, 불균형 처리 방법, 피처 그룹, 데이터 설정(`log_data_settings()`) |
 | metrics | `cv_auc`(fold별), `cv_auc_mean`, `cv_auc_std`, `test_auc`, `test_ks`, `test_precision`, `test_recall`, `test_f1`, `psi_train_test` |
 | artifacts | 모델 파일 (`log_model()`) |
-| 최종 모델 | `register_final_model()`로 `credit_risk_model`에 등록 (alias `production`, 태그 `stage: Production`). 다시 등록하면 예전 버전의 태그는 `stage: Archived`로 바뀝니다. |
+| 최종 모델 | ANOVA로 고른 모델을 `register_final_model()`로 `credit_risk_model`에 등록 (alias `production`, 태그 `stage: Production`). 다시 등록하면 예전 버전의 태그는 `stage: Archived`로 바뀝니다. |
 
 ### 주의할 점
 
