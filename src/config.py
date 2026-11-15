@@ -16,6 +16,7 @@ HOME_CREDIT_BUREAU_PATH = HOME_CREDIT_PATH / "bureau.csv"                   # CB
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"         # 파이프라인 결과(parquet, metadata.json) 저장 폴더
 MODEL_DIR = PROJECT_ROOT / "models"                         # 학습된 모델 저장 폴더
 PREPROCESSOR_PATH = MODEL_DIR / "preprocessor_v1.0.joblib"  # 학습된 전처리기 저장 경로
+ANOVA_RESULTS_PATH = MODEL_DIR / "anova_results_v1.0.json"  # ANOVA 검증 결과 저장 경로 (API /anova가 읽는다)
 
 # Kaggle 데이터셋 이름
 GMSC_COMPETITION = "GiveMeSomeCredit"                   # Give Me Some Credit
@@ -26,9 +27,15 @@ MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000") 
 REGISTERED_MODEL_NAME = "credit_risk_model"   # Model Registry에 등록할 최종 모델 이름
 MODEL_ALIAS = "production"                    # 최종 모델 표시 (alias)
 
+# ANOVA 통계 검증, 최종 모델 선정 (src/statistics/anova.py)
+ANOVA_ALPHA = 0.05                                                   # 유의수준. p-value가 이보다 작으면 유의한 차이로 보고 Tukey HSD를 한다
+ETA_SQUARED_LEVELS = {"Small": 0.01, "Medium": 0.06, "Large": 0.14}   # η² 해석 기준 (과제 해석 가이드). 0.01 미만은 Negligible
+DEFAULT_FINAL_MODEL = "xgboost"                                      # 기존 최종 모델. 평균 AUC 1위와 유의한 차이가 없으면 이 모델을 유지한다
+
 # 데이터 분할
 RANDOM_STATE = 42                 # 무작위 작업의 시드값 (결과 재현용)
 SPLIT_RATIO = (0.70, 0.15, 0.15)  # Train / Validation / Test
+CV_FOLDS = 5                      # Stratified K-Fold 교차검증 fold 수 (튜닝, 최종 학습, ANOVA가 같은 fold를 쓴다)
 
 # 공통 컬럼
 TARGET = "SeriousDlqin2yrs"       # 타겟: 2년 내 90일 이상 연체 여부

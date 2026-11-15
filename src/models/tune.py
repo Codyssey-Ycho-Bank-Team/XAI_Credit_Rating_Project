@@ -24,7 +24,7 @@ import mlflow.sklearn
 import numpy as np
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, StratifiedKFold
 
-from src.config import FEATURE_GROUPS, RANDOM_STATE, TARGET
+from src.config import CV_FOLDS, FEATURE_GROUPS, RANDOM_STATE, TARGET
 from src.data.pipeline import load_processed_splits
 from src.models.estimators import BEST_PARAMS_PATH, IMBALANCE_METHODS, SEARCH_SPACES, build_search_pipeline
 from src.models.tracking import log_data_settings, start_experiment, start_run
@@ -32,7 +32,6 @@ from src.models.tracking import log_data_settings, start_experiment, start_run
 logger = logging.getLogger(__name__)
 
 FEATURE_GROUP = "combined"   # 최종 모델 입력 (전통 + 대안 22개)
-CV_FOLDS = 5
 N_ITER = 30                  # RandomizedSearchCV에서 뽑을 조합 수
 
 

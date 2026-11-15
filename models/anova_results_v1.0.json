@@ -1,0 +1,171 @@
+{
+  "description": "5-Fold Stratified CV(Train, random_state=42)의 fold별 AUC로 계산한 One-way ANOVA",
+  "created_at": "2026-11-16T03:02:24",
+  "data": {
+    "thin_filer_ratio": 0.3,
+    "bias_ratio": 0.1,
+    "bias_groups": {
+      "gender": [
+        "female"
+      ],
+      "age_group": [
+        "55+"
+      ]
+    },
+    "seed": 42,
+    "created_at": "2026-10-12T13:36:15",
+    "rows": {
+      "train": 104999,
+      "valid": 22500,
+      "test": 22500
+    }
+  },
+  "alpha": 0.05,
+  "selected_algorithm": "xgboost",
+  "test_1": {
+    "test_name": "피처 그룹별 AUC 비교 (One-way ANOVA)",
+    "algorithm": "xgboost",
+    "groups": [
+      "traditional",
+      "alternative",
+      "combined"
+    ],
+    "fold_scores": {
+      "traditional": [
+        0.8490873532179475,
+        0.8443644598089383,
+        0.8474950590241976,
+        0.8528875158544479,
+        0.8454511895819431
+      ],
+      "alternative": [
+        0.8377480865236366,
+        0.838641393033871,
+        0.8366356527205681,
+        0.8401168707608796,
+        0.8361889497863979
+      ],
+      "combined": [
+        0.8584405201735862,
+        0.8558632234382386,
+        0.8553763225124728,
+        0.8610686217723369,
+        0.8518979137668574
+      ]
+    },
+    "group_means": {
+      "traditional": 0.8478571154974949,
+      "alternative": 0.8378661905650706,
+      "combined": 0.8565293203326985
+    },
+    "group_stds": {
+      "traditional": 0.0033517391291628135,
+      "alternative": 0.0015817560488614866,
+      "combined": 0.0034453214006853784
+    },
+    "f_statistic": 51.09457155445641,
+    "p_value": 1.3469100471670765e-06,
+    "effect_size_eta_squared": 0.8949112001956853,
+    "effect_size_interpretation": "Large",
+    "is_significant": true,
+    "post_hoc_tukey": [
+      {
+        "comparison": "traditional vs alternative",
+        "mean_diff": 0.009990924932424261,
+        "p_adj": 0.00042968017684641424,
+        "ci_low": 0.005061380200403446,
+        "ci_high": 0.014920469664445076,
+        "significant": true
+      },
+      {
+        "comparison": "traditional vs combined",
+        "mean_diff": -0.00867220483520359,
+        "p_adj": 0.0013943530990759845,
+        "ci_low": -0.013601749567224404,
+        "ci_high": -0.003742660103182775,
+        "significant": true
+      },
+      {
+        "comparison": "alternative vs combined",
+        "mean_diff": -0.01866312976762785,
+        "p_adj": 8.981203449831554e-07,
+        "ci_low": -0.023592674499648664,
+        "ci_high": -0.013733585035607036,
+        "significant": true
+      }
+    ]
+  },
+  "test_2": {
+    "test_name": "알고리즘별 AUC 비교 (One-way ANOVA)",
+    "feature_group": "combined",
+    "groups": [
+      "logistic_regression",
+      "xgboost",
+      "lightgbm"
+    ],
+    "fold_scores": {
+      "logistic_regression": [
+        0.8488252834893961,
+        0.8474370314541778,
+        0.8453873661058803,
+        0.8519039730766614,
+        0.8453206663410588
+      ],
+      "xgboost": [
+        0.8584405201735862,
+        0.8558632234382386,
+        0.8553763225124728,
+        0.8610686217723369,
+        0.8518979137668574
+      ],
+      "lightgbm": [
+        0.8587266491798331,
+        0.8540579172213179,
+        0.8542598233606602,
+        0.8612017235333218,
+        0.8524052939950072
+      ]
+    },
+    "group_means": {
+      "logistic_regression": 0.8477748640934349,
+      "xgboost": 0.8565293203326985,
+      "lightgbm": 0.856130281458028
+    },
+    "group_stds": {
+      "logistic_regression": 0.0027381693721931295,
+      "xgboost": 0.0034453214006853784,
+      "lightgbm": 0.003678637271230949
+    },
+    "f_statistic": 11.140723316346035,
+    "p_value": 0.001839639112280022,
+    "effect_size_eta_squared": 0.6499564289519718,
+    "effect_size_interpretation": "Large",
+    "is_significant": true,
+    "post_hoc_tukey": [
+      {
+        "comparison": "logistic_regression vs xgboost",
+        "mean_diff": -0.00875445623926352,
+        "p_adj": 0.0033779625046860273,
+        "ci_low": -0.014342144356599792,
+        "ci_high": -0.0031667681219272473,
+        "significant": true
+      },
+      {
+        "comparison": "logistic_regression vs lightgbm",
+        "mean_diff": -0.00835541736459311,
+        "p_adj": 0.004722261767101776,
+        "ci_low": -0.013943105481929383,
+        "ci_high": -0.0027677292472568374,
+        "significant": true
+      },
+      {
+        "comparison": "xgboost vs lightgbm",
+        "mean_diff": 0.0003990388746704099,
+        "p_adj": 0.9802206808397171,
+        "ci_low": -0.005188649242665862,
+        "ci_high": 0.005986726992006682,
+        "significant": false
+      }
+    ]
+  }
+}
