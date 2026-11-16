@@ -14,7 +14,7 @@ model = joblib.load(MODEL_DIR / 'xgboost_v1.0.joblib')
 pred_train = model.predict_proba(train[features])[:, 1]
 pred_test = model.predict_proba(test[features])[:, 1]
 
-# MLflow final run 기록값(Test AUC 0.8640, KS 0.5745, PSI 0.0003)과 맞는지 교차검증용
+# MLflow final run 기록값(Test AUC 0.8637, KS 0.5776, PSI 0.0003)과 맞는지 교차검증용
 print(f'AUC (test): {roc_auc_score(y_test, pred_test):.4f}')
 
 # ── KS Statistic ──

@@ -81,7 +81,7 @@ Train 전체로 다시 학습해 Test 22,500건(부도 1,504건)으로 평가했
 
 - KS 기준과 F1 기준의 최적 threshold가 다르다.
 - threshold는 연체자 승인 손실(FN)과 정상 고객 부당 거절(FP)의 비용을 비교해 정책으로 정한다.
-- 최종 threshold는 공정성 검증(Threshold Adjustment) 뒤 결정한다.
+- 최종 threshold는 0.5로 정했다. 공정성 완화는 threshold를 바꾸는 Threshold Adjustment 대신 Reweighting으로 했다 (`notebooks/10_fairness.py`).
 
 ### 씬파일러 AUC uplift (`05_thin_filter_uplift.py`)
 - 씬파일러 uplift(통합−전통): **+0.0317**, 부트스트랩 95% CI [+0.022, +0.041]

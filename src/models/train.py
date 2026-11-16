@@ -39,7 +39,8 @@ logger = logging.getLogger(__name__)
 MODEL_VERSION = 'v1.0'
 FEATURE_GROUP = 'combined'  # 전통 17개 + 대안 5개 = 22개 (최종 모델 입력)
 # 부도 확률이 이 값 이상이면 부도(1)로 판정 -> precision/recall/f1 계산용.
-# 최종 threshold는 공정성 검증 후 정할 예정이라(07 노트북 결론) 환경 변수로 바꿀 수 있게 둔다.
+# 최종 threshold는 0.5로 정했다 (공정성 완화는 threshold를 바꾸지 않는 Reweighting으로 함, notebooks/10_fairness.py).
+# 정책을 바꿀 때를 위해 환경 변수로 바꿀 수 있게 둔다.
 DECISION_THRESHOLD = float(os.getenv('DECISION_THRESHOLD') or 0.5)
 
 

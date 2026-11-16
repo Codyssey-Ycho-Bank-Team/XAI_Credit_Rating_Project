@@ -83,6 +83,18 @@ def test_flag_reasons_only_when_flag_is_set(risky_result):
     assert "is_thin_filer" not in features
 
 
+def test_age_is_never_a_rejection_reason() -> None:
+    """나이가 위험을 올려도(신용 관점 음수) 거절 사유에는 넣지 않고, shap_values에는 남긴다.
+    나이 말고는 위험 요인이 적은 젊은 고객이라, 나이를 빼지 않으면 사유 2위로 나온다."""
+    young = {**RISKY, "age": 22, "RevolvingUtilizationOfUnsecuredLines": 0.1, "DebtRatio": 0.2, "MonthlyIncome": 4000,
+             "NumberOfOpenCreditLinesAndLoans": 5, "NumberOfTime30-59DaysPastDueNotWorse": 0, "NumberOfTimes90DaysLate": 0,
+             "NumberOfTime60-89DaysPastDueNotWorse": 0, "NumberOfDependents": 0, "telecom_payment_rate": 0.98,
+             "utility_payment_rate": 0.97, "spending_consistency": 70, "regular_payment_count": 8, "app_login_frequency": 15}
+    result = explain(young)
+    assert result["shap_values"]["age"] < 0
+    assert "age" not in {r["feature"] for r in result["rejection_reasons"]}
+
+
 def test_input_columns_are_raw_values_only():
     assert len(INPUT_COLS) == 15
     assert "monthly_debt_payment" not in INPUT_COLS and "is_thin_filer" not in INPUT_COLS
