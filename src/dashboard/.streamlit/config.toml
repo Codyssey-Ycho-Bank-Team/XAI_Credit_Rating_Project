@@ -1,0 +1,14 @@
+# 피그마 토큰과 같은 색 (color/action/primary, bg/canvas, text/body, border/default)
+[theme]
+primaryColor = "#1f3a5f"
+backgroundColor = "#f2f4f7"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#1b2433"
+borderColor = "#dde2ea"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

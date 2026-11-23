@@ -1,5 +1,36 @@
-# docker-compose up 한 번으로 서비스를 실행한다 (API, 대시보드는 만들 때 추가)
+# docker-compose up 한 번으로 API(8000), 대시보드(8501), MLflow(5000)를 실행한다
 services:
+  api:                                      # 대출 심사 API (localhost:8000, Swagger: /docs)
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      DECISION_THRESHOLD: ${DECISION_THRESHOLD:-0.5}   # 승인/거절 기준 부도 확률
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  dashboard:                                # 심사역용 대시보드 (localhost:8501)
+    build:
+      context: .
+      dockerfile: docker/dashboard.Dockerfile
+    ports:
+      - "${DASHBOARD_PORT:-8501}:8501"
+    environment:
+      API_BASE_URL: http://api:8000         # 컨테이너끼리는 서비스명으로 접근한다 (localhost는 자기 자신)
+      API_TIMEOUT: ${API_TIMEOUT:-3}
+      EXPLAIN_TIMEOUT: ${EXPLAIN_TIMEOUT:-10}
+      PUBLIC_API_URL: http://localhost:${API_PORT:-8000}     # 브라우저에서 여는 링크용
+      PUBLIC_MLFLOW_URL: http://localhost:${MLFLOW_PORT:-5000}
+    depends_on:
+      api:
+        condition: service_healthy
+
   mlflow:                                   # 실험 기록 UI (localhost:5000)
     image: ghcr.io/mlflow/mlflow:v3.16.1    # 공식 이미지. pyproject.toml의 mlflow 버전과 맞춘다
     # 기록(params, metrics 등)은 sqlite DB에, 모델 파일은 artifacts 폴더에 저장한다
@@ -8,6 +39,6 @@ services:
       --backend-store-uri sqlite:////mlflow_data/mlflow.db
       --artifacts-destination /mlflow_data/artifacts
     ports:
-      - "5000:5000"                         # 내 PC 5000번 → 컨테이너 5000번
+      - "${MLFLOW_PORT:-5000}:5000"         # 내 PC 5000번 → 컨테이너 5000번
     volumes:
       - ./mlflow_data:/mlflow_data          # 기록을 프로젝트 폴더에 저장한다 (Git에 올려서 평가자도 볼 수 있게)

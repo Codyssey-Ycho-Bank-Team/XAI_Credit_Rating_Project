@@ -30,12 +30,16 @@ dependencies = [
     "mlflow==3.16.1",
     # 공정성
     "fairlearn==0.15.0",
+    # API 서버 (대시보드 의존성은 src/dashboard/requirements.txt에 따로 둔다: MSA)
+    "fastapi==0.142.2",
+    "uvicorn==0.54.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "jupyter==1.1.1",
     "pytest==9.1.1",
+    "httpx==0.28.1",   # FastAPI TestClient (tests/test_api.py)
 ]
 
 [tool.setuptools.packages.find]

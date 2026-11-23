@@ -122,3 +122,24 @@ PROTECTED_GROUPS = {"gender": ["female"], "age_group": ["20-34"]}   # DI Ratio�
 DI_RANGE = (0.8, 1.25)               # DI Ratio 정상 범위. 벗어나면 WARNING (0.8: four-fifths rule, 1.25 = 1 ÷ 0.8)
 EO_MAX_DIFF = 0.10                   # Equalized Odds: 집단 간 TPR·FPR 차이 상한. 넘으면 WARNING
 MITIGATION_ATTRIBUTE = "age_group"   # Reweighting으로 완화할 보호 속성 (편향 강도 0 데이터에서 기준을 벗어난 속성)
+
+# API 서버 (src/api/)
+MODEL_VERSION = "xgboost_v1.0"                                      # /health, /predict 응답에 넣는 최종 모델 버전
+DECISION_THRESHOLD = float(os.getenv("DECISION_THRESHOLD", "0.5"))  # 부도 확률이 이 값 이상이면 REJECTED (train.py와 같은 환경 변수)
+CREDIT_SCORE_MAX = 1000                                             # 신용 점수 = round((1 - 부도 확률) × 1000)
+RISK_GRADES = [   # (등급, 신용 점수 하한, 위험 수준). 위에서부터 처음 만족하는 등급. E(500 미만)는 부도 확률 0.5 이상 = 거절 구간
+    ("A", 900, "LOW"),       # 부도 확률 10% 미만
+    ("B", 800, "LOW"),       # 10% ~ 20%
+    ("C", 650, "MEDIUM"),    # 20% ~ 35%
+    ("D", 500, "HIGH"),      # 35% ~ 50%
+    ("E", 0, "HIGH"),        # 50% 이상
+]
+METRICS_RESULTS_PATH = MODEL_DIR / "metrics_results_v1.0.json"     # Test 성능·곡선·혼동행렬 (API /metrics가 읽는다)
+PLOT_DIR = PROJECT_ROOT / "docs"                                    # 전역 SHAP 그림 위치 (notebooks/08_shap_global.py가 저장)
+SUMMARY_PLOT_PATH = PLOT_DIR / "shap_summary.png"
+DEPENDENCE_PLOT_PATHS = {   # Dependence Plot: {변수명: 그림}. 08_shap_global.py [결과] 주석의 중요도 순 상위 2개
+    "utility_payment_rate": PLOT_DIR / "shap_dependence_top1.png",
+    "telecom_payment_rate": PLOT_DIR / "shap_dependence_top2.png",
+}
+PERFORMANCE_TARGETS = {"auc": 0.78, "ks": 0.28, "psi": 0.1, "thin_filer_auc_uplift": 0.03}   # 과제 성능 목표 (psi만 '미만')
+AUC_DROP_MAX = 0.02                 # 공정성 보정 후 허용하는 AUC 하락폭

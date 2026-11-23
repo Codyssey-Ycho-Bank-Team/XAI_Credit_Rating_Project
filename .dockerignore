@@ -1,0 +1,9 @@
+.git
+.venv
+data/
+mlflow_data/
+notebooks/
+tests/
+**/__pycache__
+*.egg-info
+.env

@@ -23,7 +23,7 @@ Kaggle 데이터에는 `cs-training.csv`와 `cs-test.csv`가 있습니다. `cs-t
 | XAI (SHAP, 거절 사유) | ✅ 완료 (전역·지역 SHAP 그림, 거절 사유 Top 5 `src/explainer/`) |
 | 공정성 검증, Bias Mitigation | ✅ 완료 (DI Ratio·Equalized Odds, Reweighting `src/fairness/`) |
 | ANOVA 통계 검증 | ✅ 완료 (피처 그룹별·알고리즘별 ANOVA, Tukey HSD `src/statistics/anova.py`) |
-| API (FastAPI), 대시보드 (Streamlit), Docker | ⏳ 예정 (docker-compose는 MLflow만 설정됨) |
+| API (FastAPI), 대시보드 (Streamlit), Docker | ✅ 완료 (엔드포인트 7개 `src/api/`, 대시보드 `src/dashboard/`, docker-compose 3개 서비스) |
 
 ## 팀 구성원 역할
 
@@ -47,8 +47,10 @@ docker-compose up
 | 서비스 | 주소 | 상태 |
 | --- | --- | --- |
 | MLflow UI | http://localhost:5000 | ✅ |
-| API | http://localhost:8000 | ⏳ 예정 |
-| 대시보드 | http://localhost:8501 | ⏳ 예정 |
+| API (Swagger: `/docs`) | http://localhost:8000 | ✅ |
+| 대시보드 | http://localhost:8501 | ✅ |
+
+처음 실행할 때 이미지를 만들어서 몇 분 걸립니다. 코드를 바꾼 뒤에는 `docker-compose up --build`로 다시 만듭니다.
 
 ### 개발 환경
 
@@ -173,7 +175,30 @@ from src.fairness.mitigation import load_fairness_results
 result = load_fairness_results()   # {"before": {"gender": {"di_ratio", ...}, "age_group": {...}}, "after": {...}, ...}
 ```
 
-#### 10. 테스트
+#### 10. API, 대시보드 (Docker 없이)
+
+```bash
+uvicorn src.api.main:app --port 8000                 # 프로젝트 루트에서
+cd src/dashboard && pip install -r requirements.txt  # 대시보드 의존성 (streamlit, requests)
+streamlit run app.py                                 # API_BASE_URL 기본값 http://localhost:8000
+```
+
+- API는 `models/`(모델·전처리기·결과 JSON)와 `docs/`(전역 SHAP 그림)만 읽습니다 (데이터 파일 불필요).
+- 대시보드는 모델 파일·SHAP을 쓰지 않고 API와 HTTP로만 통신합니다 (MSA). 등급·기준 충족 여부 같은 판정도 API가 하고 화면은 표시만 합니다.
+- 신용 점수 = round((1 − 부도 확률) × 1000). 등급은 점수 구간으로 정합니다 (`config.py`의 `RISK_GRADES`).
+
+| 등급 | 신용 점수 | 부도 확률 | 위험 수준 (화면 색) |
+| --- | --- | --- | --- |
+| A | 900 이상 | 10% 미만 | 저위험 (초록) |
+| B | 800 ~ 899 | 10% ~ 20% | 저위험 (초록) |
+| C | 650 ~ 799 | 20% ~ 35% | 중위험 (주황) |
+| D | 500 ~ 649 | 35% ~ 50% | 고위험 (빨강) |
+| E | 500 미만 | 50% 이상 = 거절 | 고위험 (빨강) |
+
+- 대시보드의 과제 5개 탭: 심사역 로그인 → 심사 실행·결과(고객 심사), XAI 상세(XAI 분석) / MLops 로그인 → 공정성, 모델 성능, 통계 검증. 나머지 화면(대기 목록, 처리 이력, 고객 화면, 데이터 드리프트의 변수별 PSI 등)은 목업입니다.
+- 성능 곡선(ROC, PR)은 `models/metrics_results_v1.0.json`에서 읽습니다. 데이터가 있는 PC에서 `python -X utf8 -m src.models.export_metrics`를 실행하면 곡선까지 채워집니다. 지금 파일은 MLflow 기록과 노트북 결과로 채운 임시본이라 곡선이 비어 있습니다.
+
+#### 11. 테스트
 
 ```bash
 python -X utf8 -m pytest
@@ -222,17 +247,28 @@ XAI_Credit_Rating_Project/
 │   ├── fairness/
 │   │   ├── metrics.py           # 집단별 승인율·TPR·FPR, DI Ratio, Equalized Odds (기준을 벗어나면 WARNING)
 │   │   └── mitigation.py        # Reweighting 완화 전/후 비교 (API /fairness용 load_fairness_results())
+│   ├── api/
+│   │   ├── main.py              # FastAPI 엔드포인트 7개 (/health, /predict, /explain, /fairness, /fairness/mitigation, /metrics, /anova)
+│   │   ├── schemas.py           # Pydantic 요청·응답 스키마
+│   │   └── service.py           # 신용 점수·등급, 공정성 기준 판정, ANOVA 해석 문장 등 계산
+│   ├── dashboard/               # Streamlit 대시보드 (API와 HTTP로만 통신)
+│   │   ├── app.py               # 진입점: 역할 선택 (심사역 / 고객 / MLops)
+│   │   ├── api_client.py        # API 호출, 캐시, 에러 표시
+│   │   ├── common.py            # 공통 스타일, 사이드바(서버 상태), 위험도 색상
+│   │   └── pages/               # 화면별 파일
 │   ├── models/
 │   │   ├── estimators.py        # 모델별 탐색 범위, 불균형 처리 방식, 모델 생성 (tune·train 공통)
 │   │   ├── tune.py              # 모델 3개 × 불균형 처리 2가지 튜닝 -> best_params.json
 │   │   ├── train.py             # 최종 학습·평가·저장, MLflow 기록, ANOVA로 고른 모델 Registry 등록
 │   │   ├── metrics.py           # AUC, KS, Precision, Recall, F1, PSI 계산
+│   │   ├── export_metrics.py    # Test 성능·곡선·혼동행렬 -> models/metrics_results_v1.0.json (API /metrics용)
 │   │   └── tracking.py          # MLflow 연결, run 시작, 데이터 설정·모델 기록, 최종 모델 등록
 │   └── statistics/
 │       └── anova.py             # ANOVA 검증 1·2, Tukey HSD, 최종 알고리즘 선정 (API /anova용 load_anova_results())
 ├── tests/                       # pytest (python -X utf8 -m pytest)
 ├── .env.example                 # 환경 변수 템플릿
-├── docker-compose.yml           # API + 대시보드 + MLflow 실행 설정 (현재 MLflow만)
+├── docker/                      # api.Dockerfile, dashboard.Dockerfile
+├── docker-compose.yml           # API + 대시보드 + MLflow 실행 설정
 ├── pyproject.toml               # 의존성 원본
 ├── requirements.txt             # 실행용 잠금 파일 (uv 자동 생성)
 └── requirements-dev.txt         # 개발용 잠금 파일 (uv 자동 생성)
@@ -244,7 +280,10 @@ XAI_Credit_Rating_Project/
 | --- | --- | --- |
 | `KAGGLE_API_TOKEN` | 원본 데이터 자동 다운로드용 Kaggle API 키. Kaggle → Settings → API에서 발급합니다. 두 대회 페이지([Give Me Some Credit](https://www.kaggle.com/c/GiveMeSomeCredit), [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk))에서 각각 규칙 동의(Join Competition)도 해야 받을 수 있습니다. | `data/raw/`에 원본 파일이 없을 때만 |
 | `MLFLOW_TRACKING_URI` | 학습 코드가 기록을 보낼 MLflow 서버 주소. 없으면 `http://localhost:5000`을 씁니다. | 아니요 |
-| `DECISION_THRESHOLD` | 승인/거절을 가르는 부도 확률 기준값. 없으면 0.5를 씁니다. 최종 학습의 Precision·Recall·F1과 공정성 계산에 쓰입니다 (거절 사유 `explain()`은 `reasons.py`의 기본값 0.5를 따로 씀). | 아니요 |
+| `DECISION_THRESHOLD` | 승인/거절을 가르는 부도 확률 기준값. 없으면 0.5를 씁니다. 최종 학습의 Precision·Recall·F1, 공정성 계산, API `/predict`·`/explain`에 쓰입니다. | 아니요 |
+| `API_BASE_URL` | 대시보드가 부를 API 주소. docker-compose에서는 `http://api:8000`(서비스명), 로컬 단독 실행은 기본값 `http://localhost:8000`. | 아니요 |
+| `API_TIMEOUT`, `EXPLAIN_TIMEOUT` | 대시보드의 API 타임아웃(초). 기본 3초, `/explain`은 그림을 그려서 10초. | 아니요 |
+| `API_PORT`, `DASHBOARD_PORT`, `MLFLOW_PORT` | docker-compose가 내 PC에 여는 포트. 기본 8000, 8501, 5000. | 아니요 |
 
 ## 데이터 파이프라인
 
